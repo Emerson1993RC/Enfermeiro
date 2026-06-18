@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do Enfermeiro — Croatá dos Martins</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:        #F0F4F8;
+  --surface:   #FFFFFF;
+  --primary:   #005B8E;
+  --primary-d: #003F63;
+  --accent:    #00A86B;
+  --accent-d:  #007A4D;
+  --warn:      #E07B00;
+  --text:      #0F172A;
+  --muted:     #64748B;
+  --border:    #CBD5E1;
+  --radius:    14px;
+  --shadow:    0 4px 24px rgba(0,91,142,.10);
+  --shadow-lg: 0 12px 40px rgba(0,91,142,.18);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HERO ── */
+.hero {
+  background: linear-gradient(135deg, var(--primary-d) 0%, var(--primary) 55%, #0284C7 100%);
+  color: #fff;
+  padding: 56px 40px 48px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M44 44v-8h-4v8h-8v4h8v8h4v-8h8v-4h-8zm0-44V0h-4v8h-8v4h8v8h4V12h8V8h-8z'/%3E%3C/g%3E%3C/svg%3E");
+}
+.hero-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.hero-left {}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.hero h1 span { color: #7DD3FC; }
+.hero p {
+  font-size: 1rem;
+  opacity: .82;
+  max-width: 440px;
+  line-height: 1.6;
+}
+.hero-stats {
+  display: flex;
+  gap: 28px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+.hero-stat {
+  text-align: center;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  padding: 12px 20px;
+}
+.hero-stat .n { font-family: 'Sora', sans-serif; font-size: 1.8rem; font-weight: 800; }
+.hero-stat .l { font-size: .72rem; opacity: .75; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+.hero-cross {
+  font-size: 6rem;
+  opacity: .18;
+  line-height: 1;
+  user-select: none;
+}
+
+/* ── DATE BAR ── */
+.date-bar {
+  background: var(--primary-d);
+  color: rgba(255,255,255,.7);
+  font-size: .78rem;
+  text-align: center;
+  padding: 7px;
+  letter-spacing: .3px;
+}
+.date-bar strong { color: #fff; }
+
+/* ── MAIN CONTENT ── */
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px 60px;
+  flex: 1;
+  width: 100%;
+}
+
+/* ── SECTION LABEL ── */
+.sec-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sec-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── MENU CARDS ── */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 48px;
+}
+@media (max-width: 900px) { .menu-grid { grid-template-columns: 1fr; } }
+
+.menu-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow .25s, transform .2s;
+  display: flex;
+  flex-direction: column;
+}
+.menu-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+
+.card-header {
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.card-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+.card-icon.blue   { background: #EBF5FC; }
+.card-icon.green  { background: #E6F7F1; }
+.card-icon.orange { background: #FFF3E0; }
+.card-icon.purple { background: #F3EFFE; }
+
+.card-title { font-family: 'Sora', sans-serif; font-size: 1rem; font-weight: 700; }
+.card-desc  { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+
+/* ── LINK LIST ── */
+.link-list { padding: 10px 0; flex: 1; }
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 24px;
+  font-size: .88rem;
+  color: var(--text);
+  text-decoration: none;
+  transition: background .15s;
+  border-bottom: 1px solid #F1F5F9;
+  position: relative;
+}
+.link-item:last-child { border-bottom: none; }
+.link-item:hover { background: #F8FAFC; }
+.link-item:hover .link-arrow { opacity: 1; transform: translateX(0); }
+.link-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+.link-dot.green  { background: var(--accent); }
+.link-dot.orange { background: var(--warn); }
+.link-dot.purple { background: #7C3AED; }
+.link-label { flex: 1; font-weight: 500; }
+.link-sub { font-size: .73rem; color: var(--muted); display: block; margin-top: 1px; font-weight: 400; }
+.link-arrow {
+  font-size: .85rem;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all .15s;
+}
+
+/* ── INFO SECTION ── */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 700px) { .info-grid { grid-template-columns: 1fr; } }
+
+.info-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+.info-card h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: .95rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tip-list { list-style: none; }
+.tip-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: .85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.tip-list li:last-child { border-bottom: none; }
+.tip-list li::before {
+  content: '✦';
+  color: var(--primary);
+  font-size: .65rem;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.quick-actions { display: flex; flex-direction: column; gap: 10px; }
+.qa-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  font-size: .87rem;
+  font-weight: 600;
+  transition: all .18s;
+  background: #FAFBFC;
+}
+.qa-btn:hover { border-color: var(--primary); background: var(--surface); color: var(--primary); }
+.qa-btn .qa-icon { font-size: 1.2rem; }
+.qa-btn .qa-sub { font-size: .72rem; color: var(--muted); font-weight: 400; display: block; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--primary-d);
+  color: rgba(255,255,255,.6);
+  text-align: center;
+  padding: 18px 24px;
+  font-size: .78rem;
+}
+footer strong { color: #fff; }
+footer a { color: #7DD3FC; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-badge">🏥 USF I — Croatá dos Martins</div>
+      <h1>Painel do<br><span>Enfermeiro</span></h1>
+      <p>Ferramentas de análise, indicadores de saúde e recursos de gestão da atenção primária em um só lugar.</p>
+
+    </div>
+    <div class="hero-cross" aria-hidden="true">✚</div>
+  </div>
+</div>
+
+<!-- DATE BAR -->
+<div class="date-bar">
+  Bem-vindo, <strong>Enfermeiro Emerson</strong> &nbsp;·&nbsp; <span id="dateStr"></span>
+</div>
+
+<div class="main">
+
+  <!-- MENU PRINCIPAL -->
+  <div class="sec-label">Módulos</div>
+  <div class="menu-grid">
+
+    <!-- PRODUÇÃO -->
+    <div class="menu-card">
+      <div class="card-header">
+        <div class="card-icon blue">📊</div>
+        <div>
+          <div class="card-title">Produção</div>
+          <div class="card-desc">Análise mensal da equipe</div>
+        </div>
+      </div>
+      <div class="link-list">
+        <a class="link-item" href="https://emerson1993rc.github.io/Produ-o-da-equipe/analise.html" target="_blank">
+          <span class="link-dot"></span>
+          <span>
+            <span class="link-label">Análise de Produção</span>
+            <span class="link-sub">Upload CSV · Médico, Enfermeiro, ACS e mais</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Produ-o-da-equipe/ACS.html" target="_blank">
+          <span class="link-dot"></span>
+          <span>
+            <span class="link-label">Produção ACS</span>
+            <span class="link-sub">Resumo por agente comunitário</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/cadastro/index.html" target="_blank">
+          <span class="link-dot"></span>
+          <span>
+            <span class="link-label">Cadastro</span>
+            <span class="link-sub">Gestão de cadastros da unidade</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- INDICADORES -->
+    <div class="menu-card">
+      <div class="card-header">
+        <div class="card-icon green">📈</div>
+        <div>
+          <div class="card-title">Indicadores</div>
+          <div class="card-desc">Monitoramento de qualidade</div>
+        </div>
+      </div>
+      <div class="link-list">
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C2/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C2</span>
+            <span class="link-sub">Pré-natal</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C3/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C3</span>
+            <span class="link-sub">Prevenção ginecológica</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C4/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C4</span>
+            <span class="link-sub">Hipertensão arterial</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C5/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C5</span>
+            <span class="link-sub">Diabetes mellitus</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C6/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C6</span>
+            <span class="link-sub">Saúde da criança</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C7/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C7</span>
+            <span class="link-sub">Saúde bucal</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- OUTRAS FERRAMENTAS -->
+    <div class="menu-card">
+      <div class="card-header">
+        <div class="card-icon orange">🛠️</div>
+        <div>
+          <div class="card-title">Outras Ferramentas</div>
+          <div class="card-desc">Rotinas e recursos complementares</div>
+        </div>
+      </div>
+      <div class="link-list">
+        <a class="link-item" href="https://emerson1993rc.github.io/Ferramentas/Rotina.html" target="_blank">
+          <span class="link-dot orange"></span>
+          <span>
+            <span class="link-label">Rotina de Trabalho</span>
+            <span class="link-sub">Organização das atividades diárias</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://indicadores-saude-varjota.vercel.app/" target="_blank">
+          <span class="link-dot orange"></span>
+          <span>
+            <span class="link-label">Indicadores Varjota</span>
+            <span class="link-sub">Painel municipal de saúde</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RECURSOS RÁPIDOS -->
+  <div class="sec-label">Recursos rápidos</div>
+  <div class="info-grid">
+
+    <!-- MINISTÉRIO DA SAÚDE -->
+    <div class="info-card">
+      <h3>🏛️ Ministério da Saúde</h3>
+      <div class="quick-actions">
+        <a class="qa-btn" href="https://www.gov.br/saude/pt-br" target="_blank">
+          <span class="qa-icon">🌐</span>
+          <span>
+            Portal do Ministério da Saúde
+            <span class="qa-sub">Notícias, portarias e documentos oficiais</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/d/doencas-de-notificacao-compulsoria" target="_blank">
+          <span class="qa-icon">🔴</span>
+          <span>
+            Notificações Compulsórias (SINAN)
+            <span class="qa-sub">Lista de doenças · fluxo de notificação</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://sisab.saude.gov.br" target="_blank">
+          <span class="qa-icon">📊</span>
+          <span>
+            SISAB
+            <span class="qa-sub">Sistema de Informação em Saúde da APS</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://aps.saude.gov.br" target="_blank">
+          <span class="qa-icon">🏥</span>
+          <span>
+            APS — Atenção Primária
+            <span class="qa-sub">Notas técnicas, protocolos e indicadores</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://conass.org.br" target="_blank">
+          <span class="qa-icon">📋</span>
+          <span>
+            CONASS
+            <span class="qa-sub">Conselho Nacional de Secretários de Saúde</span>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ATALHOS RÁPIDOS -->
+    <div class="info-card">
+      <h3>⚡ Acesso rápido</h3>
+      <div class="quick-actions">
+        <a class="qa-btn" href="https://emerson1993rc.github.io/Produ-o-da-equipe/analise.html" target="_blank">
+          <span class="qa-icon">📊</span>
+          <span>
+            Abrir Análise de Produção
+            <span class="qa-sub">Upload CSV → relatório completo</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://emerson1993rc.github.io/Indicador_saude/C5/index.html" target="_blank">
+          <span class="qa-icon">📈</span>
+          <span>
+            Indicador C5 — Diabetes
+            <span class="qa-sub">Hemoglobina glicada · SISAB</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://emerson1993rc.github.io/Indicador_saude/C4/index.html" target="_blank">
+          <span class="qa-icon">🩺</span>
+          <span>
+            Indicador C4 — Hipertensão
+            <span class="qa-sub">Pressão arterial · consultas</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://emerson1993rc.github.io/Ferramentas/Rotina.html" target="_blank">
+          <span class="qa-icon">📋</span>
+          <span>
+            Rotina de Trabalho
+            <span class="qa-sub">Agenda e atividades do dia</span>
+          </span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  Desenvolvido por <strong>Emerson Rodrigues Cardoso</strong> · Enfermeiro · USF I Croatá dos Martins &nbsp;·&nbsp;
+  <a href="https://github.com/Emerson1993RC" target="_blank">GitHub</a>
+  &nbsp;·&nbsp; <span id="footerDate"></span>
+</footer>
+
+<script>
+  const now = new Date();
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  document.getElementById('dateStr').textContent = now.toLocaleDateString('pt-BR', opts);
+  document.getElementById('footerDate').textContent = now.toLocaleDateString('pt-BR');
+</script>
+</body>
+</html>
