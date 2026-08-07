@@ -772,6 +772,7 @@ async function carregarPerfilEAbrir(userId) {
     document.getElementById('welcomeUserName').textContent =
         (!error && perfil && perfil.nome_completo) ? perfil.nome_completo : 'Enfermeiro(a)';
     mostrarPainel(true);
+    reiniciarTimerInatividade();
 }
 
 // ─────────────────────────────────────────────
@@ -827,9 +828,31 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 // ─────────────────────────────────────────────
 // 6) LOGOUT
 // ─────────────────────────────────────────────
-document.getElementById('btnLogout').addEventListener('click', async () => {
+async function fazerLogout() {
     await sb.auth.signOut();
     mostrarPainel(false);
+}
+document.getElementById('btnLogout').addEventListener('click', fazerLogout);
+
+// ─────────────────────────────────────────────
+// 6b) LOGOUT AUTOMÁTICO POR INATIVIDADE (5 minutos)
+// ─────────────────────────────────────────────
+const TEMPO_INATIVIDADE_MS = 5 * 60 * 1000; // 5 minutos
+let timerInatividade = null;
+
+function reiniciarTimerInatividade() {
+    if (document.getElementById('appContent').style.display === 'none') return; // só conta se estiver logado
+    clearTimeout(timerInatividade);
+    timerInatividade = setTimeout(async () => {
+        await fazerLogout();
+        const errBox = document.getElementById('loginError');
+        errBox.textContent = 'Sessão encerrada por inatividade. Faça login novamente.';
+        errBox.classList.add('show');
+    }, TEMPO_INATIVIDADE_MS);
+}
+
+['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evento => {
+    document.addEventListener(evento, reiniciarTimerInatividade, { passive: true });
 });
 
 // ─────────────────────────────────────────────
