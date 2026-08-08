@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central de Dados — Painel do Enfermeiro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── TOKENS (mesma paleta do Painel do Enfermeiro) ── */
+:root {
+  --bg:        #F0F4F8;
+  --surface:   #FFFFFF;
+  --primary:   #005B8E;
+  --primary-d: #003F63;
+  --accent:    #00A86B;
+  --accent-d:  #007A4D;
+  --warn:      #E07B00;
+  --text:      #0F172A;
+  --muted:     #64748B;
+  --border:    #CBD5E1;
+  --radius:    14px;
+  --shadow:    0 4px 24px rgba(0,91,142,.10);
+  --shadow-lg: 0 12px 40px rgba(0,91,142,.18);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HERO ── */
+.hero {
+  background: linear-gradient(135deg, var(--primary-d) 0%, var(--primary) 55%, #0284C7 100%);
+  color: #fff;
+  padding: 40px 32px 32px;
+}
+.hero h1 { font-family: 'Sora', sans-serif; font-size: 1.9rem; font-weight: 800; margin-bottom: 6px; }
+.hero p { opacity: .85; font-size: .95rem; max-width: 640px; }
+.hero .voltar {
+  display: inline-block; margin-bottom: 16px; color: #fff; text-decoration: none;
+  font-size: .82rem; font-weight: 600; opacity: .85;
+}
+.hero .voltar:hover { opacity: 1; }
+
+/* ── DATE BAR ── */
+.date-bar {
+  background: var(--primary-d);
+  color: rgba(255,255,255,.7);
+  font-size: .78rem;
+  padding: 7px 16px;
+  display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;
+}
+.date-bar strong { color: #fff; }
+.date-bar-actions { display: flex; gap: 10px; margin-left: auto; }
+.db-link {
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); color: #fff;
+  font-size: .74rem; font-weight: 600; padding: 4px 10px; border-radius: 8px; cursor: pointer; transition: .15s;
+}
+.db-link:hover { background: rgba(255,255,255,.22); }
+
+/* ── MAIN ── */
+.main { max-width: 1200px; width: 100%; margin: 0 auto; padding: 28px 20px 60px; flex: 1; }
+.card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
+
+/* ── KPI CARDS ── */
+.kpis { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+.kpi {
+  flex: 1; min-width: 140px; background: var(--surface); border-radius: 12px; padding: 16px;
+  text-align: center; border-top: 4px solid var(--primary); box-shadow: var(--shadow); cursor: pointer; transition: .15s;
+}
+.kpi:hover { transform: translateY(-2px); }
+.kpi.active { box-shadow: var(--shadow-lg); border-width: 5px; }
+.kpi .n { font-size: 1.7rem; font-weight: 800; color: var(--primary); }
+.kpi .l { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+
+/* ── FILTROS ── */
+.filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
+.filtros .grupo-label { font-size: .78rem; font-weight: 700; color: var(--muted); margin-right: 4px; }
+.chip {
+  background: var(--surface); border: 1.5px solid var(--border); color: var(--text);
+  font-size: .78rem; font-weight: 600; padding: 5px 13px; border-radius: 20px; cursor: pointer; transition: .15s;
+}
+.chip:hover { border-color: var(--primary); }
+.chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.toolbar input[type=text] {
+  padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: .88rem; font-family: inherit; min-width: 240px;
+}
+.toolbar input[type=text]:focus { outline: none; border-color: var(--primary); }
+.btn {
+  background: var(--primary); color: #fff; border: none; padding: 9px 16px; border-radius: 10px;
+  font-size: .85rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: .15s;
+}
+.btn:hover { background: var(--primary-d); }
+.btn.warn { background: #DC2626; }
+.btn.warn:hover { background: #B91C1C; }
+.btn.ghost { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── TABELA ── */
+table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+thead th {
+  background: var(--primary-d); color: #fff; text-align: left; padding: 9px 10px; font-size: .74rem;
+  text-transform: uppercase; letter-spacing: .3px;
+}
+tbody td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tbody tr:hover { background: #F8FAFC; }
+.nome-cel .nome { font-weight: 700; color: var(--text); cursor: pointer; }
+.nome-cel .nome:hover { color: var(--primary); text-decoration: underline; }
+.nome-cel .meta { font-size: .72rem; color: var(--muted); }
+.badge-ind {
+  display: inline-block; background: rgba(0,91,142,.1); color: var(--primary);
+  font-size: .7rem; font-weight: 800; padding: 2px 9px; border-radius: 6px;
+}
+.badge-classe { display: inline-block; font-size: .74rem; font-weight: 800; padding: 3px 10px; border-radius: 8px; color: #fff; }
+.c-otimo { background: #198754; }
+.c-bom { background: #0284C7; }
+.c-suficiente { background: #E07B00; }
+.c-regular { background: #DC2626; }
+.acoes { display: flex; gap: 6px; }
+.acao-btn {
+  background: none; border: 1px solid var(--border); border-radius: 7px; padding: 4px 8px; cursor: pointer; font-size: .78rem;
+}
+.acao-btn:hover { background: var(--bg); }
+.vazio { text-align: center; padding: 50px 20px; color: var(--muted); }
+.vazio .ico { font-size: 2rem; margin-bottom: 8px; }
+
+/* ── MODAL DETALHES ── */
+#detalheOverlay {
+  position: fixed; inset: 0; z-index: 900; background: rgba(15,23,42,.55);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+#detalheOverlay.show { display: flex; }
+.detalhe-modal {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  padding: 26px; width: 100%; max-width: 560px; max-height: 82vh; overflow-y: auto;
+}
+.detalhe-modal h3 { font-family: 'Sora', sans-serif; font-size: 1.15rem; margin-bottom: 4px; }
+.detalhe-modal .sub { font-size: .82rem; color: var(--muted); margin-bottom: 16px; }
+.detalhe-linha { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: .84rem; }
+.detalhe-linha .k { color: var(--muted); font-weight: 600; }
+.detalhe-linha .v { text-align: right; font-weight: 600; }
+.detalhe-fecha { margin-top: 18px; width: 100%; }
+
+/* ── LOGIN GATE (idêntico ao Painel do Enfermeiro) ── */
+#loginGate {
+  position: fixed; inset: 0; z-index: 999;
+  background: linear-gradient(135deg, var(--primary-d) 0%, var(--primary) 55%, #0284C7 100%);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.login-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 40px 36px; width: 100%; max-width: 380px; }
+.login-card .lc-badge {
+  display: inline-flex; align-items: center; gap: 6px; background: rgba(0,91,142,.08); color: var(--primary);
+  border-radius: 20px; padding: 4px 14px; font-size: .72rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; margin-bottom: 14px;
+}
+.login-card h2 { font-family: 'Sora', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.login-card p.lc-sub { color: var(--muted); font-size: .85rem; margin-bottom: 24px; }
+.lc-field { margin-bottom: 16px; }
+.lc-field label { display: block; font-size: .78rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.lc-field input {
+  width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: .92rem; font-family: inherit; color: var(--text);
+}
+.lc-field input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,91,142,.12); }
+.lc-btn {
+  width: 100%; background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 10px;
+  font-size: .92rem; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.lc-btn:hover { background: var(--primary-d); }
+.lc-btn:disabled { opacity: .6; cursor: not-allowed; }
+.lc-error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5; border-radius: 8px; padding: 9px 12px; font-size: .8rem; margin-bottom: 16px; display: none; }
+.lc-error.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ GATE DE LOGIN ══════════════ -->
+<div id="loginGate">
+  <div class="login-card">
+    <div class="lc-badge">🏥 USF I — Croatá dos Martins</div>
+    <h2>Central de Dados</h2>
+    <p class="lc-sub">Entre com seu CPF e senha para continuar.</p>
+    <div class="lc-error" id="loginError"></div>
+    <form id="loginForm">
+      <div class="lc-field">
+        <label for="loginCpf">CPF</label>
+        <input type="text" id="loginCpf" inputmode="numeric" placeholder="000.000.000-00" autocomplete="username" required>
+      </div>
+      <div class="lc-field">
+        <label for="loginSenha">Senha</label>
+        <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="lc-btn" id="loginBtn">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL DE DETALHES ══════════════ -->
+<div id="detalheOverlay">
+  <div class="detalhe-modal">
+    <h3 id="detalheTitulo">Detalhes</h3>
+    <div class="sub" id="detalheSub"></div>
+    <div id="detalheCorpo"></div>
+    <button class="btn ghost detalhe-fecha" id="detalheFechar">Fechar</button>
+  </div>
+</div>
+
+<!-- ══════════════ CONTEÚDO (só aparece logado) ══════════════ -->
+<div id="appContent" style="display:none;">
+
+  <div class="hero">
+    <a href="../index.html" class="voltar">← Voltar ao Painel</a>
+    <h1>📚 Central de Dados dos Pacientes</h1>
+    <p>Histórico consolidado de todas as análises enviadas pelos indicadores (C2 a C7, Tríade). Busque por nome ou CNS, ou navegue pelos filtros.</p>
+  </div>
+
+  <div class="date-bar">
+    <span>Bem-vindo, <strong id="welcomeUserName">Enfermeiro(a)</strong></span>
+    <span class="date-bar-actions">
+      <button class="db-link" id="btnLogout" type="button">↪ Sair</button>
+    </span>
+  </div>
+
+  <div class="main">
+    <div class="kpis" id="kpis">
+      <div class="kpi active" id="kpiTotal" onclick="setFiltroIndicador('TODOS')">
+        <div class="l">Registros</div>
+        <div class="n" id="kpiTotalN">0</div>
+      </div>
+      <div class="kpi" id="kpiPacientes">
+        <div class="l">Pacientes únicos</div>
+        <div class="n" id="kpiPacientesN">0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <input type="text" id="buscaTexto" placeholder="🔎 Buscar por nome ou CNS..." oninput="renderTabela()">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn ghost" onclick="carregarDados()">🔄 Atualizar</button>
+        </div>
+      </div>
+
+      <div class="filtros" id="filtrosIndicador">
+        <span class="grupo-label">Indicador:</span>
+        <button class="chip active" data-ind="TODOS" onclick="setFiltroIndicador('TODOS')">Todos</button>
+      </div>
+      <div class="filtros" id="filtrosClasse" style="display:none;">
+        <span class="grupo-label">Classificação:</span>
+        <button class="chip active" data-classe="TODAS" onclick="setFiltroClasse('TODAS')">Todas</button>
+        <button class="chip" data-classe="Ótimo" onclick="setFiltroClasse('Ótimo')">Ótimo</button>
+        <button class="chip" data-classe="Bom" onclick="setFiltroClasse('Bom')">Bom</button>
+        <button class="chip" data-classe="Suficiente" onclick="setFiltroClasse('Suficiente')">Suficiente</button>
+        <button class="chip" data-classe="Regular" onclick="setFiltroClasse('Regular')">Regular</button>
+      </div>
+      <div class="filtros" id="filtrosMicro"></div>
+
+      <div id="areaTabela">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Paciente / CNS / DN / Idade</th>
+              <th>Indicador</th>
+              <th>Data análise</th>
+              <th>Micro</th>
+              <th>Classificação</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPrincipal"></tbody>
+        </table>
+        <div class="vazio" id="vazioMsg" style="display:none;">
+          <div class="ico">🗂️</div>
+          <div>Sem nenhum dado analisado nos sistemas de indicador para esse filtro/busca.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /#appContent -->
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIGURAÇÃO SUPABASE — mesmos dados do painel de login
+// ═══════════════════════════════════════════════
+const SUPABASE_URL = 'https://pwhumwbiyarhicknrruk.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_veuLl7A8rlb7r5odrq7mOg_R2oXl_Gt';
+const DOMINIO_LOGIN = 'enfermeiro.local';
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function apenasNumeros(str) { return (str || '').replace(/\D/g, ''); }
+function cpfParaEmail(cpf) { return `${apenasNumeros(cpf)}@${DOMINIO_LOGIN}`; }
+function mostrarPainel(mostrar) {
+    document.getElementById('loginGate').style.display = mostrar ? 'none' : 'flex';
+    document.getElementById('appContent').style.display = mostrar ? 'block' : 'none';
+}
+function formatarCpfInput(el) {
+    el.addEventListener('input', () => {
+        let v = apenasNumeros(el.value).slice(0, 11);
+        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        el.value = v;
+    });
+}
+formatarCpfInput(document.getElementById('loginCpf'));
+
+function calcularIdade(dataNascISO) {
+    if (!dataNascISO) return '-';
+    const nasc = new Date(dataNascISO + 'T00:00:00');
+    const hoje = new Date();
+    let anos = hoje.getFullYear() - nasc.getFullYear();
+    let meses = hoje.getMonth() - nasc.getMonth();
+    if (hoje.getDate() < nasc.getDate()) meses--;
+    if (meses < 0) { anos--; meses += 12; }
+    if (anos > 0) return `${anos} ano${anos > 1 ? 's' : ''}${meses > 0 ? ` e ${meses}m` : ''}`;
+    return `${meses} mês${meses !== 1 ? 'es' : ''}`;
+}
+function formatBR(dataISO) {
+    if (!dataISO) return '-';
+    const [a, m, d] = dataISO.split('-');
+    return `${d}/${m}/${a}`;
+}
+function classeCss(classe) {
+    const map = { 'Ótimo': 'c-otimo', 'Bom': 'c-bom', 'Suficiente': 'c-suficiente', 'Regular': 'c-regular' };
+    return map[classe] || 'c-regular';
+}
+function humanizarChave(k) {
+    return k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+}
+function renderValor(v) {
+    if (v === null || v === undefined || v === '') return '-';
+    if (typeof v === 'boolean') return v ? '✔️ Sim' : '❌ Não';
+    if (Array.isArray(v)) return v.length ? v.join(', ') : '-';
+    if (typeof v === 'object') {
+        return Object.entries(v).map(([k, val]) => `${humanizarChave(k)}: ${renderValor(val)}`).join(' · ');
+    }
+    return String(v);
+}
+
+// ═══════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════
+let todosRegistros = [];
+let filtroIndicador = 'TODOS';
+let filtroClasse = 'TODAS';
+let filtroMicro = 'TODOS';
+
+// ═══════════════════════════════════════════════
+// CARREGAR DADOS DO SUPABASE
+// ═══════════════════════════════════════════════
+async function carregarDados() {
+    document.getElementById('tbodyPrincipal').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">Carregando...</td></tr>';
+    const { data, error } = await sb
+        .from('indicador_snapshots')
+        .select('*, pacientes(id,nome,cns,data_nascimento)')
+        .order('data_analise', { ascending: false })
+        .limit(2000);
+
+    if (error) {
+        document.getElementById('tbodyPrincipal').innerHTML = `<tr><td colspan="6" style="color:#DC2626; padding:16px;">Erro ao carregar: ${error.message}</td></tr>`;
+        return;
+    }
+    todosRegistros = data || [];
+    montarFiltrosDinamicos();
+    atualizarKPIs();
+    renderTabela();
+}
+
+function montarFiltrosDinamicos() {
+    // indicadores
+    const indicadores = [...new Set(todosRegistros.map(r => r.indicador))].sort();
+    const grupoInd = document.getElementById('filtrosIndicador');
+    grupoInd.querySelectorAll('[data-ind]:not([data-ind="TODOS"])').forEach(b => b.remove());
+    indicadores.forEach(ind => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.dataset.ind = ind;
+        btn.textContent = ind;
+        btn.onclick = () => setFiltroIndicador(ind);
+        grupoInd.appendChild(btn);
+    });
+
+    // microáreas
+    const micros = [...new Set(todosRegistros.map(r => r.microarea).filter(Boolean))].sort((a, b) => {
+        const na = parseFloat(a), nb = parseFloat(b);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.localeCompare(b);
+    });
+    const grupoMicro = document.getElementById('filtrosMicro');
+    grupoMicro.innerHTML = '';
+    if (micros.length) {
+        const label = document.createElement('span');
+        label.className = 'grupo-label';
+        label.textContent = 'Micro:';
+        grupoMicro.appendChild(label);
+        const btnTodas = document.createElement('button');
+        btnTodas.className = 'chip active';
+        btnTodas.dataset.micro = 'TODOS';
+        btnTodas.textContent = 'Todas';
+        btnTodas.onclick = () => setFiltroMicro('TODOS');
+        grupoMicro.appendChild(btnTodas);
+        micros.forEach(m => {
+            const btn = document.createElement('button');
+            btn.className = 'chip';
+            btn.dataset.micro = m;
+            btn.textContent = `Micro ${m}`;
+            btn.onclick = () => setFiltroMicro(m);
+            grupoMicro.appendChild(btn);
+        });
+    }
+
+    // mostra filtro de classificação só se algum registro tiver classificação
+    document.getElementById('filtrosClasse').style.display = todosRegistros.some(r => r.classificacao) ? 'flex' : 'none';
+}
+
+function atualizarKPIs() {
+    document.getElementById('kpiTotalN').textContent = todosRegistros.length;
+    const pacientesUnicos = new Set(todosRegistros.map(r => r.paciente_id)).size;
+    document.getElementById('kpiPacientesN').textContent = pacientesUnicos;
+}
+
+// ═══════════════════════════════════════════════
+// FILTROS
+// ═══════════════════════════════════════════════
+function setFiltroIndicador(ind) {
+    filtroIndicador = ind;
+    document.querySelectorAll('#filtrosIndicador .chip').forEach(b => b.classList.toggle('active', b.dataset.ind === ind));
+    renderTabela();
+}
+function setFiltroClasse(c) {
+    filtroClasse = c;
+    document.querySelectorAll('#filtrosClasse .chip').forEach(b => b.classList.toggle('active', b.dataset.classe === c));
+    renderTabela();
+}
+function setFiltroMicro(m) {
+    filtroMicro = m;
+    document.querySelectorAll('#filtrosMicro .chip').forEach(b => b.classList.toggle('active', b.dataset.micro === m));
+    renderTabela();
+}
+
+function listaFiltrada() {
+    let lista = todosRegistros.slice();
+    if (filtroIndicador !== 'TODOS') lista = lista.filter(r => r.indicador === filtroIndicador);
+    if (filtroClasse !== 'TODAS') lista = lista.filter(r => r.classificacao === filtroClasse);
+    if (filtroMicro !== 'TODOS') lista = lista.filter(r => String(r.microarea || '').trim() === filtroMicro);
+    const busca = (document.getElementById('buscaTexto').value || '').trim().toUpperCase();
+    if (busca) {
+        lista = lista.filter(r => {
+            const p = r.pacientes || {};
+            return (p.nome || '').toUpperCase().includes(busca) || (p.cns || '').includes(busca);
+        });
+    }
+    return lista;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER DA TABELA
+// ═══════════════════════════════════════════════
+function renderTabela() {
+    const lista = listaFiltrada();
+    const tbody = document.getElementById('tbodyPrincipal');
+    const vazio = document.getElementById('vazioMsg');
+    tbody.innerHTML = '';
+
+    if (!lista.length) {
+        vazio.style.display = 'block';
+        return;
+    }
+    vazio.style.display = 'none';
+
+    lista.forEach(r => {
+        const p = r.pacientes || {};
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="nome-cel">
+                <div class="nome" onclick="buscarPorNome('${(p.nome || '').replace(/'/g, "\\'")}')">${p.nome || '(sem nome)'}</div>
+                <div class="meta">CNS: ${p.cns || '-'} · DN: ${formatBR(p.data_nascimento)} · ${calcularIdade(p.data_nascimento)}</div>
+            </td>
+            <td class="text-center"><span class="badge-ind">${r.indicador}</span></td>
+            <td class="text-center">${formatBR(r.data_analise)}</td>
+            <td class="text-center">${r.microarea || '-'}</td>
+            <td class="text-center">${r.classificacao ? `<span class="badge-classe ${classeCss(r.classificacao)}">${r.pontuacao != null ? r.pontuacao + ' · ' : ''}${r.classificacao}</span>` : '-'}</td>
+            <td class="acoes">
+                <button class="acao-btn" onclick="verDetalhes('${r.id}')" title="Ver detalhes">👁️</button>
+                <button class="acao-btn" onclick="excluirSnapshot('${r.id}')" title="Excluir esta análise">🗑️</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function buscarPorNome(nome) {
+    document.getElementById('buscaTexto').value = nome;
+    renderTabela();
+}
+
+// ═══════════════════════════════════════════════
+// MODAL DE DETALHES
+// ═══════════════════════════════════════════════
+function verDetalhes(id) {
+    const r = todosRegistros.find(x => x.id === id);
+    if (!r) return;
+    const p = r.pacientes || {};
+    document.getElementById('detalheTitulo').textContent = p.nome || '(sem nome)';
+    document.getElementById('detalheSub').textContent =
+        `CNS: ${p.cns || '-'} · DN: ${formatBR(p.data_nascimento)} · Indicador ${r.indicador} · Análise de ${formatBR(r.data_analise)}`;
+
+    const corpo = document.getElementById('detalheCorpo');
+    corpo.innerHTML = '';
+    const linhaTop = document.createElement('div');
+    linhaTop.className = 'detalhe-linha';
+    linhaTop.innerHTML = `<span class="k">Pontuação / Classificação</span><span class="v">${r.pontuacao != null ? r.pontuacao : '-'} ${r.classificacao ? '· ' + r.classificacao : ''}</span>`;
+    corpo.appendChild(linhaTop);
+
+    const dados = r.dados || {};
+    Object.entries(dados).forEach(([k, v]) => {
+        const linha = document.createElement('div');
+        linha.className = 'detalhe-linha';
+        linha.innerHTML = `<span class="k">${humanizarChave(k)}</span><span class="v">${renderValor(v)}</span>`;
+        corpo.appendChild(linha);
+    });
+
+    document.getElementById('detalheOverlay').classList.add('show');
+}
+document.getElementById('detalheFechar').addEventListener('click', () => {
+    document.getElementById('detalheOverlay').classList.remove('show');
+});
+
+// ═══════════════════════════════════════════════
+// EXCLUIR
+// ═══════════════════════════════════════════════
+async function excluirSnapshot(id) {
+    const r = todosRegistros.find(x => x.id === id);
+    if (!r) return;
+    const p = r.pacientes || {};
+    if (!confirm(`Excluir a análise de ${r.indicador} de ${formatBR(r.data_analise)} para "${p.nome}"?\n\nEssa ação não pode ser desfeita.`)) return;
+
+    const { error } = await sb.from('indicador_snapshots').delete().eq('id', id);
+    if (error) { alert('Erro ao excluir: ' + error.message); return; }
+
+    todosRegistros = todosRegistros.filter(x => x.id !== id);
+    atualizarKPIs();
+    renderTabela();
+}
+
+// ═══════════════════════════════════════════════
+// AUTENTICAÇÃO
+// ═══════════════════════════════════════════════
+async function carregarPerfilEAbrir(userId) {
+    const { data: perfil, error } = await sb.from('profiles').select('nome_completo').eq('id', userId).single();
+    document.getElementById('welcomeUserName').textContent =
+        (!error && perfil && perfil.nome_completo) ? perfil.nome_completo : 'Enfermeiro(a)';
+    mostrarPainel(true);
+    carregarDados();
+}
+
+(async function iniciar() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { await carregarPerfilEAbrir(session.user.id); }
+    else { mostrarPainel(false); }
+})();
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const cpf = document.getElementById('loginCpf').value;
+    const senha = document.getElementById('loginSenha').value;
+    const btn = document.getElementById('loginBtn');
+    const errBox = document.getElementById('loginError');
+    errBox.classList.remove('show');
+
+    if (apenasNumeros(cpf).length !== 11) {
+        errBox.textContent = 'Digite um CPF válido (11 dígitos).';
+        errBox.classList.add('show');
+        return;
+    }
+    btn.disabled = true; btn.textContent = 'Entrando...';
+    const { data, error } = await sb.auth.signInWithPassword({ email: cpfParaEmail(cpf), password: senha });
+    btn.disabled = false; btn.textContent = 'Entrar';
+
+    if (error) {
+        errBox.textContent = 'CPF ou senha incorretos.';
+        errBox.classList.add('show');
+        return;
+    }
+    document.getElementById('loginSenha').value = '';
+    await carregarPerfilEAbrir(data.user.id);
+});
+
+document.getElementById('btnLogout').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    mostrarPainel(false);
+});
+
+// ── Logout automático por inatividade (5 minutos) — mesmo padrão do painel principal ──
+const TEMPO_INATIVIDADE_MS = 5 * 60 * 1000;
+let timerInatividade = null;
+function reiniciarTimerInatividade() {
+    if (document.getElementById('appContent').style.display === 'none') return;
+    clearTimeout(timerInatividade);
+    timerInatividade = setTimeout(async () => {
+        await sb.auth.signOut();
+        mostrarPainel(false);
+        const errBox = document.getElementById('loginError');
+        errBox.textContent = 'Sessão encerrada por inatividade. Faça login novamente.';
+        errBox.classList.add('show');
+    }, TEMPO_INATIVIDADE_MS);
+}
+['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evento => {
+    document.addEventListener(evento, reiniciarTimerInatividade, { passive: true });
+});
+</script>
+</body>
+</html>
