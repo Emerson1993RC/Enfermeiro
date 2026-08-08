@@ -6,6 +6,8 @@
 <title>Central de Dados — Painel do Enfermeiro</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <style>
 /* ── TOKENS (mesma paleta do Painel do Enfermeiro) ── */
 :root {
@@ -243,6 +245,8 @@ tbody tr:hover { background: #F8FAFC; }
         <input type="text" id="buscaTexto" placeholder="🔎 Buscar por nome ou CNS..." oninput="renderTabela()">
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn ghost" onclick="carregarDados()">🔄 Atualizar</button>
+          <button class="btn ghost" onclick="gerarPDFCentral()">📄 Baixar PDF</button>
+          <button class="btn warn" onclick="excluirTodosFiltrados()">🗑️ Excluir todos os filtrados</button>
         </div>
       </div>
 
@@ -259,6 +263,7 @@ tbody tr:hover { background: #F8FAFC; }
         <button class="chip" data-classe="Regular" onclick="setFiltroClasse('Regular')">Regular</button>
       </div>
       <div class="filtros" id="filtrosMicro"></div>
+      <div id="statusAcaoCentral" class="small" style="display:none; margin-bottom:12px; font-weight:600; color:var(--primary);"></div>
 
       <div id="areaTabela">
         <table>
@@ -550,6 +555,114 @@ async function excluirSnapshot(id) {
     todosRegistros = todosRegistros.filter(x => x.id !== id);
     atualizarKPIs();
     renderTabela();
+}
+
+// ═══════════════════════════════════════════════
+// EXCLUIR EM MASSA (respeita os filtros ativos)
+// ═══════════════════════════════════════════════
+async function excluirTodosFiltrados() {
+    const lista = listaFiltrada();
+    if (!lista.length) {
+        alert('Não há registros na lista filtrada atual para excluir.');
+        return;
+    }
+
+    const descricaoFiltro = [
+        filtroIndicador !== 'TODOS' ? `Indicador: ${filtroIndicador}` : null,
+        filtroClasse !== 'TODAS' ? `Classificação: ${filtroClasse}` : null,
+        filtroMicro !== 'TODOS' ? `Micro: ${filtroMicro}` : null,
+        (document.getElementById('buscaTexto').value || '').trim() ? `Busca: "${document.getElementById('buscaTexto').value.trim()}"` : null,
+    ].filter(Boolean).join(' · ') || 'Todos os registros (sem filtro)';
+
+    const digitado = prompt(
+        `Isso vai excluir PERMANENTEMENTE ${lista.length} análise(s) do banco de dados.\n\n` +
+        `Filtro atual: ${descricaoFiltro}\n\n` +
+        `Isso apaga somente as análises (indicador_snapshots) — os cadastros dos pacientes continuam intactos, ` +
+        `podendo receber novas análises depois.\n\n` +
+        `Para confirmar, digite EXCLUIR (em maiúsculas) abaixo:`
+    );
+    if (digitado !== 'EXCLUIR') {
+        if (digitado !== null) alert('Confirmação incorreta. Nada foi excluído.');
+        return;
+    }
+
+    const status = document.getElementById('statusAcaoCentral');
+    status.style.display = 'block';
+    status.textContent = `Excluindo 0/${lista.length}...`;
+
+    const ids = lista.map(r => r.id);
+    // exclui em lotes de 100 para não estourar o tamanho da requisição
+    let excluidos = 0, falhas = 0;
+    for (let i = 0; i < ids.length; i += 100) {
+        const lote = ids.slice(i, i + 100);
+        const { error } = await sb.from('indicador_snapshots').delete().in('id', lote);
+        if (error) { falhas += lote.length; console.error(error); }
+        else excluidos += lote.length;
+        status.textContent = `Excluindo ${Math.min(i + 100, ids.length)}/${ids.length}...`;
+    }
+
+    const idsExcluidosSet = new Set(ids);
+    todosRegistros = todosRegistros.filter(r => !idsExcluidosSet.has(r.id));
+    atualizarKPIs();
+    montarFiltrosDinamicos();
+    renderTabela();
+
+    status.textContent = `✅ ${excluidos} análise(s) excluída(s)${falhas ? `, ${falhas} com erro` : ''}.`;
+    setTimeout(() => { status.style.display = 'none'; }, 6000);
+}
+
+// ═══════════════════════════════════════════════
+// GERAR PDF (respeita os filtros/busca ativos)
+// ═══════════════════════════════════════════════
+function gerarPDFCentral() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const lista = listaFiltrada();
+
+    doc.setFontSize(13);
+    doc.setTextColor(0, 91, 142);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CENTRAL DE DADOS — HISTÓRICO DE PACIENTES', 14, 12);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    const filtroTxt = `Indicador: ${filtroIndicador} · Classificação: ${filtroClasse} · Micro: ${filtroMicro}`;
+    doc.text(`${filtroTxt}  |  Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 18);
+
+    const body = lista.map((r, idx) => {
+        const p = r.pacientes || {};
+        return [
+            idx + 1,
+            p.nome || '(sem nome)',
+            p.cns || '-',
+            formatBR(p.data_nascimento),
+            calcularIdade(p.data_nascimento),
+            r.indicador,
+            formatBR(r.data_analise),
+            r.microarea || '-',
+            r.classificacao ? `${r.pontuacao != null ? r.pontuacao + ' - ' : ''}${r.classificacao}` : '-',
+        ];
+    });
+
+    doc.autoTable({
+        startY: 24,
+        head: [['#', 'Nome', 'CNS', 'DN', 'Idade', 'Indicador', 'Data análise', 'Micro', 'Classificação']],
+        body,
+        styles: { fontSize: 6.5, cellPadding: 1.5 },
+        headStyles: { fillColor: [0, 63, 99], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+        alternateRowStyles: { fillColor: [240, 245, 255] },
+        margin: { left: 7, right: 7 },
+    });
+
+    const pages = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= pages; p++) {
+        doc.setPage(p);
+        doc.setTextColor(150, 150, 150);
+        doc.setFontSize(7);
+        doc.text(`Página ${p} de ${pages}`, 283, 205, { align: 'right' });
+    }
+
+    doc.save(`Central_Dados_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 // ═══════════════════════════════════════════════
