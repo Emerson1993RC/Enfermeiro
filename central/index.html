@@ -257,10 +257,6 @@ tbody tr:hover { background: #F8FAFC; }
       <div class="filtros" id="filtrosClasse" style="display:none;">
         <span class="grupo-label">Classificação:</span>
         <button class="chip active" data-classe="TODAS" onclick="setFiltroClasse('TODAS')">Todas</button>
-        <button class="chip" data-classe="Ótimo" onclick="setFiltroClasse('Ótimo')">Ótimo</button>
-        <button class="chip" data-classe="Bom" onclick="setFiltroClasse('Bom')">Bom</button>
-        <button class="chip" data-classe="Suficiente" onclick="setFiltroClasse('Suficiente')">Suficiente</button>
-        <button class="chip" data-classe="Regular" onclick="setFiltroClasse('Regular')">Regular</button>
       </div>
       <div class="filtros" id="filtrosMicro"></div>
       <div id="statusAcaoCentral" class="small" style="display:none; margin-bottom:12px; font-weight:600; color:var(--primary);"></div>
@@ -431,8 +427,32 @@ function montarFiltrosDinamicos() {
         });
     }
 
-    // mostra filtro de classificação só se algum registro tiver classificação
-    document.getElementById('filtrosClasse').style.display = todosRegistros.some(r => r.classificacao) ? 'flex' : 'none';
+    // classificação: reconstrói dinamicamente com base no indicador selecionado
+    atualizarFiltrosClasse();
+}
+
+function atualizarFiltrosClasse() {
+    const base = filtroIndicador === 'TODOS'
+        ? todosRegistros
+        : todosRegistros.filter(r => r.indicador === filtroIndicador);
+
+    const classes = [...new Set(base.map(r => r.classificacao).filter(Boolean))];
+
+    const grupoClasse = document.getElementById('filtrosClasse');
+    grupoClasse.querySelectorAll('[data-classe]:not([data-classe="TODAS"])').forEach(b => b.remove());
+    filtroClasse = 'TODAS';
+    document.querySelectorAll('#filtrosClasse .chip').forEach(b => b.classList.toggle('active', b.dataset.classe === 'TODAS'));
+
+    classes.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.dataset.classe = c;
+        btn.textContent = c;
+        btn.onclick = () => setFiltroClasse(c);
+        grupoClasse.appendChild(btn);
+    });
+
+    grupoClasse.style.display = classes.length ? 'flex' : 'none';
 }
 
 function atualizarKPIs() {
@@ -447,6 +467,7 @@ function atualizarKPIs() {
 function setFiltroIndicador(ind) {
     filtroIndicador = ind;
     document.querySelectorAll('#filtrosIndicador .chip').forEach(b => b.classList.toggle('active', b.dataset.ind === ind));
+    atualizarFiltrosClasse();
     renderTabela();
 }
 function setFiltroClasse(c) {
