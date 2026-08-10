@@ -228,7 +228,14 @@ tbody tr:hover { background: #F8FAFC; }
     </span>
   </div>
 
-  <div class="main">
+  <div class="main" style="padding-bottom:0;">
+    <div class="filtros" style="margin-bottom:0;">
+      <button class="chip active" id="tabBtnIndicadores" onclick="mudarAba('indicadores')" style="font-size:0.9rem; padding:8px 18px;">📊 Análises dos Indicadores</button>
+      <button class="chip" id="tabBtnCidadaos" onclick="mudarAba('cidadaos')" style="font-size:0.9rem; padding:8px 18px;">👥 Todos os Cidadãos</button>
+    </div>
+  </div>
+
+  <div class="main" id="tabIndicadores">
     <div class="kpis" id="kpis">
       <div class="kpi active" id="kpiTotal" onclick="setFiltroIndicador('TODOS')">
         <div class="l">Registros</div>
@@ -281,7 +288,63 @@ tbody tr:hover { background: #F8FAFC; }
         </div>
       </div>
     </div>
-  </div>
+  </div><!-- /#tabIndicadores -->
+
+  <div class="main" id="tabCidadaos" style="display:none;">
+    <div class="card mb-3" style="margin-bottom:22px;">
+      <h3 style="font-family:'Sora',sans-serif; font-size:1.15rem; margin-bottom:4px;">👥 Todos os Cidadãos Vinculados à Unidade</h3>
+      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Carregue o CSV <strong>acompanhamento-cidadaos-vinculados</strong> (exportado do e-SUS) para trazer toda a população da unidade para a Central — não só quem já teve algum indicador enviado.</p>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <input type="file" id="csvCidadaos" accept=".csv" style="flex:1; min-width:220px; padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:0.85rem;">
+        <span id="statusCsvCidadaos" style="font-size:0.82rem; color:var(--muted);"></span>
+      </div>
+    </div>
+
+    <div class="kpis" id="kpisCidadaos" style="display:none;">
+      <div class="kpi active" style="cursor:default;"><div class="l">Total</div><div class="n" id="kpiCidTotal">0</div></div>
+      <div class="kpi" style="cursor:default; border-top-color:#DC2626;"><div class="l">Cadastro Vencido (&gt;6m)</div><div class="n" id="kpiCidVencido" style="color:#DC2626;">0</div></div>
+      <div class="kpi" style="cursor:default; border-top-color:#198754;"><div class="l">Feminino</div><div class="n" id="kpiCidFem" style="color:#198754;">0</div></div>
+      <div class="kpi" style="cursor:default; border-top-color:#0284C7;"><div class="l">Masculino</div><div class="n" id="kpiCidMasc" style="color:#0284C7;">0</div></div>
+    </div>
+
+    <div class="filtros" id="filtrosMicroCidadaos" style="display:none;">
+      <span class="grupo-label">ACS/Micro:</span>
+      <button class="chip active" data-microc="TODOS" onclick="setFiltroMicroCidadaos('TODOS')">Todas</button>
+    </div>
+
+    <div class="card" id="cardTabelaCidadaos" style="display:none;">
+      <div class="toolbar">
+        <input type="text" id="buscaTextoCidadaos" placeholder="🔎 Buscar por nome ou CNS..." oninput="paginaAtualCidadaos=1; renderTabelaCidadaos()">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <label class="chip" style="cursor:pointer;"><input type="checkbox" id="chkSoVencidos" onchange="paginaAtualCidadaos=1; renderTabelaCidadaos()" style="margin-right:6px;">Só vencidos</label>
+          <button class="btn ghost" onclick="gerarPDFCidadaos()">📄 Baixar PDF</button>
+          <button class="btn" id="btnEnviarCidadaos" onclick="enviarCidadaosParaBanco()">📤 Enviar todos para o banco</button>
+        </div>
+      </div>
+      <div id="statusEnvioCidadaos" class="small" style="display:none; margin-bottom:12px; font-weight:600; color:var(--primary);"></div>
+      <div class="table-responsive" style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Cidadão / CNS / DN / Idade</th>
+              <th>Micro</th>
+              <th>Sexo</th>
+              <th>Última Atualização Cadastral</th>
+              <th>Situação</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyCidadaos"></tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:10px;">
+          <span class="small" style="color:var(--muted);" id="infoPaginaCidadaos"></span>
+          <div style="display:flex; gap:8px;">
+            <button class="btn ghost" id="btnPaginaAnterior" onclick="mudarPaginaCidadaos(-1)">← Anterior</button>
+            <button class="btn ghost" id="btnPaginaProxima" onclick="mudarPaginaCidadaos(1)">Próxima →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /#tabCidadaos -->
 </div><!-- /#appContent -->
 
 <script>
@@ -355,6 +418,281 @@ let todosRegistros = [];
 let filtroIndicador = 'TODOS';
 let filtroClasse = 'TODAS';
 let filtroMicro = 'TODOS';
+
+let abaAtiva = 'indicadores';
+let todosOsCidadaos = [];
+let filtroMicroCidadaos = 'TODOS';
+
+// ═══════════════════════════════════════════════
+// TROCA DE ABA
+// ═══════════════════════════════════════════════
+function mudarAba(aba) {
+    abaAtiva = aba;
+    document.getElementById('tabIndicadores').style.display = aba === 'indicadores' ? 'block' : 'none';
+    document.getElementById('tabCidadaos').style.display = aba === 'cidadaos' ? 'block' : 'none';
+    document.getElementById('tabBtnIndicadores').classList.toggle('active', aba === 'indicadores');
+    document.getElementById('tabBtnCidadaos').classList.toggle('active', aba === 'cidadaos');
+}
+
+// ═══════════════════════════════════════════════
+// TODOS OS CIDADÃOS — parsing do CSV "cidadãos vinculados"
+// ═══════════════════════════════════════════════
+function converterDataBR(texto) {
+    if (!texto) return null;
+    const limpo = texto.toString().trim().replace(/"/g, '');
+    const m = limpo.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (!m) return null;
+    return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+}
+function normalizeTxt(v) {
+    return String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+document.getElementById('csvCidadaos').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('statusCsvCidadaos').textContent = '⏳ Processando...';
+    Papa.parse(file, {
+        delimiter: ';', encoding: 'ISO-8859-1', skipEmptyLines: false,
+        complete: function (results) {
+            try {
+                processarCidadaos(results.data);
+                document.getElementById('statusCsvCidadaos').textContent = `✅ ${todosOsCidadaos.length} cidadãos carregados`;
+            } catch (err) {
+                document.getElementById('statusCsvCidadaos').textContent = '❌ Erro: ' + err.message;
+                console.error(err);
+            }
+        },
+        error: function (err) { document.getElementById('statusCsvCidadaos').textContent = '❌ Erro ao ler arquivo: ' + err.message; }
+    });
+});
+
+function processarCidadaos(data) {
+    const headerIndex = data.findIndex(r => r.includes('Microárea') && r.includes('Nome'));
+    if (headerIndex < 0) throw new Error('Cabeçalho com "Microárea" e "Nome" não encontrado. Confirme se é o CSV de cidadãos vinculados.');
+    const header = data[headerIndex];
+    const idx = nome => header.findIndex(h => normalizeTxt(h) === normalizeTxt(nome));
+    const col = {
+        micro: idx('Microárea'), endereco: idx('Endereço'), doc: idx('CPF/CNS'),
+        nome: idx('Nome'), idade: idx('Idade'), sexo: idx('Sexo'),
+        nascimento: idx('Data de nascimento'), celular: idx('Telefone celular'),
+        atualizacao: idx('Última atualização cadastral'), origem: idx('Origem'),
+    };
+
+    const seisMesesAtras = new Date();
+    seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
+
+    todosOsCidadaos = data.slice(headerIndex + 1)
+        .filter(r => r.length > 5 && r[col.nome])
+        .map(r => {
+            const atualizacaoStr = col.atualizacao !== -1 ? (r[col.atualizacao] || '').toString().replace(/"/g, '').trim() : '';
+            const dtAtualizacao = converterDataBR(atualizacaoStr);
+            const vencido = !dtAtualizacao || dtAtualizacao < seisMesesAtras;
+            return {
+                nome: r[col.nome] || '',
+                cns: col.doc !== -1 ? (r[col.doc] || '-').toString().replace(/"/g, '').trim() : '-',
+                nasc: col.nascimento !== -1 ? (r[col.nascimento] || '').toString().replace(/"/g, '').trim() : '',
+                idade: col.idade !== -1 ? (r[col.idade] || '').toString().trim() : '',
+                sexo: col.sexo !== -1 ? (r[col.sexo] || '').toString().trim() : '',
+                micro: col.micro !== -1 ? (r[col.micro] || 'Não informada').toString().replace(/"/g, '').trim() : 'Não informada',
+                endereco: col.endereco !== -1 ? (r[col.endereco] || '-').toString().replace(/"/g, '').trim() : '-',
+                celular: col.celular !== -1 ? (r[col.celular] || '-').toString().replace(/"/g, '').trim() : '-',
+                origem: col.origem !== -1 ? (r[col.origem] || '-').toString().replace(/"/g, '').trim() : '-',
+                atualizacao: atualizacaoStr || 'NUNCA ATUALIZADO',
+                vencido,
+            };
+        });
+
+    montarResumoCidadaos();
+    criarFiltrosMicroCidadaos();
+    renderTabelaCidadaos();
+    document.getElementById('kpisCidadaos').style.display = 'flex';
+    document.getElementById('filtrosMicroCidadaos').style.display = 'flex';
+    document.getElementById('cardTabelaCidadaos').style.display = 'block';
+}
+
+function montarResumoCidadaos() {
+    document.getElementById('kpiCidTotal').textContent = todosOsCidadaos.length;
+    document.getElementById('kpiCidVencido').textContent = todosOsCidadaos.filter(c => c.vencido).length;
+    document.getElementById('kpiCidFem').textContent = todosOsCidadaos.filter(c => normalizeTxt(c.sexo) === 'feminino').length;
+    document.getElementById('kpiCidMasc').textContent = todosOsCidadaos.filter(c => normalizeTxt(c.sexo) === 'masculino').length;
+}
+
+function criarFiltrosMicroCidadaos() {
+    const micros = [...new Set(todosOsCidadaos.map(c => normalizarMicro(c.micro) || c.micro))].sort((a, b) => {
+        const na = parseFloat(a), nb = parseFloat(b);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return String(a).localeCompare(String(b));
+    });
+    const group = document.getElementById('filtrosMicroCidadaos');
+    group.querySelectorAll('[data-microc]:not([data-microc="TODOS"])').forEach(b => b.remove());
+    micros.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.dataset.microc = m;
+        btn.textContent = /^\d+$/.test(m) ? `Micro ${m}` : m;
+        btn.onclick = () => setFiltroMicroCidadaos(m);
+        group.appendChild(btn);
+    });
+}
+function setFiltroMicroCidadaos(m) {
+    filtroMicroCidadaos = m;
+    document.querySelectorAll('#filtrosMicroCidadaos .chip').forEach(b => b.classList.toggle('active', b.dataset.microc === m));
+    paginaAtualCidadaos = 1;
+    renderTabelaCidadaos();
+}
+
+function listaFiltradaCidadaos() {
+    let lista = todosOsCidadaos.slice();
+    if (filtroMicroCidadaos !== 'TODOS') {
+        lista = lista.filter(c => (normalizarMicro(c.micro) || c.micro) === filtroMicroCidadaos);
+    }
+    if (document.getElementById('chkSoVencidos').checked) lista = lista.filter(c => c.vencido);
+    const busca = (document.getElementById('buscaTextoCidadaos').value || '').trim().toUpperCase();
+    if (busca) lista = lista.filter(c => c.nome.toUpperCase().includes(busca) || c.cns.includes(busca));
+    return lista;
+}
+
+let paginaAtualCidadaos = 1;
+const TAMANHO_PAGINA_CIDADAOS = 100;
+
+function renderTabelaCidadaos() {
+    const lista = listaFiltradaCidadaos();
+    const totalPaginas = Math.max(1, Math.ceil(lista.length / TAMANHO_PAGINA_CIDADAOS));
+    if (paginaAtualCidadaos > totalPaginas) paginaAtualCidadaos = totalPaginas;
+    const inicio = (paginaAtualCidadaos - 1) * TAMANHO_PAGINA_CIDADAOS;
+    const pagina = lista.slice(inicio, inicio + TAMANHO_PAGINA_CIDADAOS);
+
+    const tbody = document.getElementById('tbodyCidadaos');
+    // usa DocumentFragment em vez de innerHTML acumulado — renderiza só 100 linhas por vez, muito mais rápido
+    const frag = document.createDocumentFragment();
+    pagina.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="nome-cel">
+                <div class="nome">${c.nome}</div>
+                <div class="meta">CNS: ${c.cns} · DN: ${c.nasc || '-'} · ${c.idade}</div>
+            </td>
+            <td class="text-center">${/^\d+$/.test(normalizarMicro(c.micro) || '') ? 'Micro ' + normalizarMicro(c.micro) : c.micro}</td>
+            <td class="text-center">${c.sexo || '-'}</td>
+            <td class="text-center">${c.atualizacao}</td>
+            <td class="text-center">${c.vencido ? '<span class="badge-classe c-regular">VENCIDO</span>' : '<span class="badge-classe c-otimo">EM DIA</span>'}</td>
+        `;
+        frag.appendChild(tr);
+    });
+    tbody.innerHTML = '';
+    tbody.appendChild(frag);
+
+    document.getElementById('infoPaginaCidadaos').textContent =
+        lista.length ? `Mostrando ${inicio + 1}–${Math.min(inicio + TAMANHO_PAGINA_CIDADAOS, lista.length)} de ${lista.length} · Página ${paginaAtualCidadaos}/${totalPaginas}` : 'Nenhum cidadão encontrado para esse filtro/busca.';
+    document.getElementById('btnPaginaAnterior').disabled = paginaAtualCidadaos <= 1;
+    document.getElementById('btnPaginaProxima').disabled = paginaAtualCidadaos >= totalPaginas;
+}
+
+function mudarPaginaCidadaos(delta) {
+    paginaAtualCidadaos += delta;
+    renderTabelaCidadaos();
+}
+
+// ═══════════════════════════════════════════════
+// ENVIAR CIDADÃOS PARA O BANCO (pacientes + indicador_snapshots "CADASTRO")
+// ═══════════════════════════════════════════════
+async function encontrarOuCriarPacienteCidadao(nome, cns, nascStr) {
+    const nascDate = converterDataBR(nascStr);
+    const nascISO = nascDate ? `${nascDate.getFullYear()}-${String(nascDate.getMonth() + 1).padStart(2, '0')}-${String(nascDate.getDate()).padStart(2, '0')}` : null;
+    const temCns = cns && cns.trim() !== '' && cns.trim() !== '-';
+
+    if (temCns) {
+        const { data, error } = await sb.from('pacientes')
+            .upsert({ cns: cns.trim(), nome, data_nascimento: nascISO }, { onConflict: 'cns' })
+            .select('id').single();
+        if (error) throw error;
+        return data.id;
+    }
+    if (nascISO) {
+        const { data: existente } = await sb.from('pacientes').select('id')
+            .eq('nome', nome).eq('data_nascimento', nascISO).is('cns', null).maybeSingle();
+        if (existente) return existente.id;
+    }
+    const { data: novo, error } = await sb.from('pacientes').insert({ nome, data_nascimento: nascISO }).select('id').single();
+    if (error) throw error;
+    return novo.id;
+}
+
+async function enviarCidadaosParaBanco() {
+    const lista = listaFiltradaCidadaos();
+    if (!lista.length) { alert('Não há cidadãos na lista filtrada atual para enviar.'); return; }
+    if (!confirm(`Enviar ${lista.length} cidadão(s) para a central de dados? Isso pode levar alguns minutos para listas grandes.`)) return;
+
+    const btn = document.getElementById('btnEnviarCidadaos');
+    const status = document.getElementById('statusEnvioCidadaos');
+    btn.disabled = true;
+    status.style.display = 'block';
+
+    let ok = 0, falhas = 0;
+    const hoje = new Date();
+    const dataHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+
+    for (let i = 0; i < lista.length; i++) {
+        const c = lista[i];
+        status.textContent = `Enviando ${i + 1}/${lista.length}: ${c.nome}...`;
+        try {
+            const pacienteId = await encontrarOuCriarPacienteCidadao(c.nome, c.cns, c.nasc);
+            const { error } = await sb.from('indicador_snapshots').insert({
+                paciente_id: pacienteId,
+                indicador: 'CADASTRO',
+                data_analise: dataHoje,
+                pontuacao: null,
+                classificacao: c.atualizacao === 'NUNCA ATUALIZADO' ? 'Nunca atualizado' : (c.vencido ? 'Vencido' : 'Em dia'),
+                microarea: normalizarMicro(c.micro) || null,
+                dados: {
+                    idade: c.idade, sexo: c.sexo, endereco: c.endereco, telefone: c.celular,
+                    origem: c.origem, ultimaAtualizacaoCadastral: c.atualizacao,
+                },
+            });
+            if (error) throw error;
+            ok++;
+        } catch (err) {
+            console.error('Erro ao enviar', c.nome, err);
+            falhas++;
+        }
+    }
+
+    btn.disabled = false;
+    status.textContent = `✅ Envio concluído: ${ok} cidadão(s) enviado(s)${falhas ? `, ${falhas} com erro (veja o console)` : ''}.`;
+}
+
+// ═══════════════════════════════════════════════
+// PDF — TODOS OS CIDADÃOS
+// ═══════════════════════════════════════════════
+function gerarPDFCidadaos() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const lista = listaFiltradaCidadaos();
+
+    doc.setFontSize(13);
+    doc.setTextColor(0, 91, 142);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TODOS OS CIDADÃOS VINCULADOS À UNIDADE', 14, 12);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Micro: ${filtroMicroCidadaos}  |  Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 18);
+
+    const body = lista.map((c, idx) => [idx + 1, c.nome, c.cns, c.nasc || '-', c.idade, c.sexo, c.micro, c.atualizacao, c.vencido ? 'VENCIDO' : 'EM DIA']);
+
+    doc.autoTable({
+        startY: 24,
+        head: [['#', 'Nome', 'CNS', 'DN', 'Idade', 'Sexo', 'Micro', 'Últ. Atualização', 'Situação']],
+        body,
+        styles: { fontSize: 6.5, cellPadding: 1.5 },
+        headStyles: { fillColor: [0, 63, 99], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+        alternateRowStyles: { fillColor: [240, 245, 255] },
+        margin: { left: 7, right: 7 },
+    });
+
+    doc.save(`Cidadaos_Vinculados_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
 
 // ═══════════════════════════════════════════════
 // CARREGAR DADOS DO SUPABASE
