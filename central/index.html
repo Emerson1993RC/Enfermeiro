@@ -246,7 +246,6 @@ tbody tr:hover { background: #F8FAFC; }
     <div class="filtros" style="margin-bottom:0;">
       <button class="chip active" id="tabBtnIndicadores" onclick="mudarAba('indicadores')" style="font-size:0.9rem; padding:8px 18px;">📊 Análises dos Indicadores</button>
       <button class="chip" id="tabBtnPerfil" onclick="mudarAba('perfil')" style="font-size:0.9rem; padding:8px 18px;">🧑‍⚕️ Perfil do Paciente</button>
-      <button class="chip" id="tabBtnCidadaos" onclick="mudarAba('cidadaos')" style="font-size:0.9rem; padding:8px 18px;">👥 Todos os Cidadãos</button>
     </div>
   </div>
 
@@ -314,42 +313,6 @@ tbody tr:hover { background: #F8FAFC; }
     <div id="areaPerfil"></div>
   </div><!-- /#tabPerfil -->
 
-  <div class="main" id="tabCidadaos" style="display:none;">
-    <div class="card mb-3" style="margin-bottom:22px;">
-      <h3 style="font-family:'Sora',sans-serif; font-size:1.15rem; margin-bottom:4px;">👥 Todos os Cidadãos Vinculados à Unidade</h3>
-      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Carregue o CSV <strong>acompanhamento-cidadaos-vinculados</strong> (exportado do e-SUS) para ter uma lista rápida de nome, ACS e última atualização cadastral de toda a população. Clique num nome para ver o perfil completo na aba "Perfil do Paciente".</p>
-      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-        <input type="file" id="csvCidadaos" accept=".csv" style="flex:1; min-width:220px; padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:0.85rem;">
-        <span id="statusCsvCidadaos" style="font-size:0.82rem; color:var(--muted);"></span>
-      </div>
-    </div>
-
-    <div class="card" id="cardTabelaCidadaos" style="display:none;">
-      <div class="toolbar">
-        <input type="text" id="buscaTextoCidadaos" placeholder="🔎 Buscar por nome..." oninput="paginaAtualCidadaos=1; renderTabelaCidadaos()">
-        <span class="small" style="color:var(--muted);" id="totalCidadaosResumo"></span>
-      </div>
-      <div class="table-responsive" style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th style="text-align:left;">Nome</th>
-              <th>ACS</th>
-              <th>Última Atualização Cadastral</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyCidadaos"></tbody>
-        </table>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:10px;">
-          <span class="small" style="color:var(--muted);" id="infoPaginaCidadaos"></span>
-          <div style="display:flex; gap:8px;">
-            <button class="btn ghost" id="btnPaginaAnterior" onclick="mudarPaginaCidadaos(-1)">← Anterior</button>
-            <button class="btn ghost" id="btnPaginaProxima" onclick="mudarPaginaCidadaos(1)">Próxima →</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div><!-- /#tabCidadaos -->
 </div><!-- /#appContent -->
 
 <script>
@@ -425,8 +388,6 @@ let filtroClasse = 'TODAS';
 let filtroMicro = 'TODOS';
 
 let abaAtiva = 'indicadores';
-let todosOsCidadaos = [];
-let filtroMicroCidadaos = 'TODOS';
 
 // ═══════════════════════════════════════════════
 // TROCA DE ABA
@@ -435,114 +396,8 @@ function mudarAba(aba) {
     abaAtiva = aba;
     document.getElementById('tabIndicadores').style.display = aba === 'indicadores' ? 'block' : 'none';
     document.getElementById('tabPerfil').style.display = aba === 'perfil' ? 'block' : 'none';
-    document.getElementById('tabCidadaos').style.display = aba === 'cidadaos' ? 'block' : 'none';
     document.getElementById('tabBtnIndicadores').classList.toggle('active', aba === 'indicadores');
     document.getElementById('tabBtnPerfil').classList.toggle('active', aba === 'perfil');
-    document.getElementById('tabBtnCidadaos').classList.toggle('active', aba === 'cidadaos');
-}
-
-// ═══════════════════════════════════════════════
-// TODOS OS CIDADÃOS — parsing do CSV "cidadãos vinculados"
-// ═══════════════════════════════════════════════
-function converterDataBR(texto) {
-    if (!texto) return null;
-    const limpo = texto.toString().trim().replace(/"/g, '');
-    const m = limpo.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    if (!m) return null;
-    return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
-}
-function normalizeTxt(v) {
-    return String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-}
-
-document.getElementById('csvCidadaos').addEventListener('change', function (e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    document.getElementById('statusCsvCidadaos').textContent = '⏳ Processando...';
-    Papa.parse(file, {
-        delimiter: ';', encoding: 'ISO-8859-1', skipEmptyLines: false,
-        complete: function (results) {
-            try {
-                processarCidadaos(results.data);
-                document.getElementById('statusCsvCidadaos').textContent = `✅ ${todosOsCidadaos.length} cidadãos carregados`;
-            } catch (err) {
-                document.getElementById('statusCsvCidadaos').textContent = '❌ Erro: ' + err.message;
-                console.error(err);
-            }
-        },
-        error: function (err) { document.getElementById('statusCsvCidadaos').textContent = '❌ Erro ao ler arquivo: ' + err.message; }
-    });
-});
-
-function processarCidadaos(data) {
-    const headerIndex = data.findIndex(r => r.includes('Microárea') && r.includes('Nome'));
-    if (headerIndex < 0) throw new Error('Cabeçalho com "Microárea" e "Nome" não encontrado. Confirme se é o CSV de cidadãos vinculados.');
-    const header = data[headerIndex];
-    const idx = nome => header.findIndex(h => normalizeTxt(h) === normalizeTxt(nome));
-    const col = {
-        micro: idx('Microárea'), nome: idx('Nome'),
-        atualizacao: idx('Última atualização cadastral'),
-    };
-
-    todosOsCidadaos = data.slice(headerIndex + 1)
-        .filter(r => r.length > 3 && r[col.nome])
-        .map(r => ({
-            nome: (r[col.nome] || '').toString().replace(/"/g, '').trim(),
-            micro: col.micro !== -1 ? (r[col.micro] || '').toString().replace(/"/g, '').trim() : '',
-            atualizacao: col.atualizacao !== -1 ? (r[col.atualizacao] || 'NUNCA ATUALIZADO').toString().replace(/"/g, '').trim() || 'NUNCA ATUALIZADO' : 'NUNCA ATUALIZADO',
-        }))
-        .sort((a, b) => a.nome.localeCompare(b.nome));
-
-    renderTabelaCidadaos();
-    document.getElementById('cardTabelaCidadaos').style.display = 'block';
-    document.getElementById('totalCidadaosResumo').textContent = `${todosOsCidadaos.length} cidadãos carregados`;
-}
-
-function listaFiltradaCidadaos() {
-    const busca = (document.getElementById('buscaTextoCidadaos').value || '').trim().toUpperCase();
-    if (!busca) return todosOsCidadaos;
-    return todosOsCidadaos.filter(c => c.nome.toUpperCase().includes(busca));
-}
-
-let paginaAtualCidadaos = 1;
-const TAMANHO_PAGINA_CIDADAOS = 100;
-
-function renderTabelaCidadaos() {
-    const lista = listaFiltradaCidadaos();
-    const totalPaginas = Math.max(1, Math.ceil(lista.length / TAMANHO_PAGINA_CIDADAOS));
-    if (paginaAtualCidadaos > totalPaginas) paginaAtualCidadaos = totalPaginas;
-    const inicio = (paginaAtualCidadaos - 1) * TAMANHO_PAGINA_CIDADAOS;
-    const pagina = lista.slice(inicio, inicio + TAMANHO_PAGINA_CIDADAOS);
-
-    const tbody = document.getElementById('tbodyCidadaos');
-    const frag = document.createDocumentFragment();
-    pagina.forEach(c => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="nome-cel"><div class="nome" onclick="verPerfilDoNome('${c.nome.replace(/'/g, "\\'")}')">${c.nome}</div></td>
-            <td class="text-center">${nomeAcs(c.micro)}</td>
-            <td class="text-center">${c.atualizacao}</td>
-        `;
-        frag.appendChild(tr);
-    });
-    tbody.innerHTML = '';
-    tbody.appendChild(frag);
-
-    document.getElementById('infoPaginaCidadaos').textContent =
-        lista.length ? `Mostrando ${inicio + 1}\u2013${Math.min(inicio + TAMANHO_PAGINA_CIDADAOS, lista.length)} de ${lista.length} \u00b7 P\u00e1gina ${paginaAtualCidadaos}/${totalPaginas}` : 'Nenhum cidad\u00e3o encontrado para essa busca.';
-    document.getElementById('btnPaginaAnterior').disabled = paginaAtualCidadaos <= 1;
-    document.getElementById('btnPaginaProxima').disabled = paginaAtualCidadaos >= totalPaginas;
-}
-
-function mudarPaginaCidadaos(delta) {
-    paginaAtualCidadaos += delta;
-    renderTabelaCidadaos();
-}
-
-function verPerfilDoNome(nome) {
-    mudarAba('perfil');
-    document.getElementById('buscaTextoPerfil').value = nome;
-    renderPerfil();
 }
 
 // ═══════════════════════════════════════════════
