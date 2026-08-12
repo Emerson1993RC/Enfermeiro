@@ -150,6 +150,20 @@ tbody tr:hover { background: #F8FAFC; }
 .detalhe-linha .v { text-align: right; font-weight: 600; }
 .detalhe-fecha { margin-top: 18px; width: 100%; }
 
+/* ── CARD DE PERFIL DO PACIENTE ── */
+.perfil-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; margin-bottom: 18px; }
+.perfil-card .cabecalho { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.perfil-card .cabecalho h4 { font-family: 'Sora', sans-serif; font-size: 1.15rem; font-weight: 800; color: var(--text); }
+.perfil-card .cabecalho .meta { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+.perfil-card .badge-acs { background: rgba(0,91,142,.1); color: var(--primary); font-size: 0.78rem; font-weight: 700; padding: 5px 13px; border-radius: 20px; white-space: nowrap; }
+.categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.categoria-bloco { border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; border-top: 4px solid var(--cor, var(--primary)); }
+.categoria-bloco .titulo { font-size: 0.88rem; font-weight: 800; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.categoria-bloco .data-analise { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; }
+.categoria-bloco .pendencias { font-size: 0.8rem; color: var(--text); }
+.categoria-bloco .pendencias .tag { display: inline-block; background: #FEF2F2; color: #B91C1C; border-radius: 6px; padding: 2px 8px; font-size: 0.72rem; font-weight: 600; margin: 2px 3px 0 0; }
+.categoria-bloco .em-dia-txt { color: #15803D; font-weight: 700; font-size: 0.82rem; }
+
 /* ── LOGIN GATE (idêntico ao Painel do Enfermeiro) ── */
 #loginGate {
   position: fixed; inset: 0; z-index: 999;
@@ -231,6 +245,7 @@ tbody tr:hover { background: #F8FAFC; }
   <div class="main" style="padding-bottom:0;">
     <div class="filtros" style="margin-bottom:0;">
       <button class="chip active" id="tabBtnIndicadores" onclick="mudarAba('indicadores')" style="font-size:0.9rem; padding:8px 18px;">📊 Análises dos Indicadores</button>
+      <button class="chip" id="tabBtnPerfil" onclick="mudarAba('perfil')" style="font-size:0.9rem; padding:8px 18px;">🧑‍⚕️ Perfil do Paciente</button>
       <button class="chip" id="tabBtnCidadaos" onclick="mudarAba('cidadaos')" style="font-size:0.9rem; padding:8px 18px;">👥 Todos os Cidadãos</button>
     </div>
   </div>
@@ -275,7 +290,7 @@ tbody tr:hover { background: #F8FAFC; }
               <th style="text-align:left;">Paciente / CNS / DN / Idade</th>
               <th>Indicador</th>
               <th>Data análise</th>
-              <th>Micro</th>
+              <th>ACS</th>
               <th>Classificação</th>
               <th>Ações</th>
             </tr>
@@ -290,47 +305,37 @@ tbody tr:hover { background: #F8FAFC; }
     </div>
   </div><!-- /#tabIndicadores -->
 
+  <div class="main" id="tabPerfil" style="display:none;">
+    <div class="card mb-3" style="margin-bottom:22px;">
+      <h3 style="font-family:'Sora',sans-serif; font-size:1.15rem; margin-bottom:4px;">🧑‍⚕️ Perfil do Paciente</h3>
+      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Digite o nome ou CNS de um paciente para ver, num só lugar, todas as categorias em que ele se encaixa (HAS, DM, Idoso, Criança, Gestante, Mulher etc.) e a pendência mais recente de cada indicador.</p>
+      <input type="text" id="buscaTextoPerfil" placeholder="🔎 Digite o nome ou CNS do paciente..." oninput="renderPerfil()" style="width:100%; padding:11px 16px; border:1.5px solid var(--border); border-radius:10px; font-size:0.95rem; font-family:inherit;">
+    </div>
+    <div id="areaPerfil"></div>
+  </div><!-- /#tabPerfil -->
+
   <div class="main" id="tabCidadaos" style="display:none;">
     <div class="card mb-3" style="margin-bottom:22px;">
       <h3 style="font-family:'Sora',sans-serif; font-size:1.15rem; margin-bottom:4px;">👥 Todos os Cidadãos Vinculados à Unidade</h3>
-      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Carregue o CSV <strong>acompanhamento-cidadaos-vinculados</strong> (exportado do e-SUS) para trazer toda a população da unidade para a Central — não só quem já teve algum indicador enviado.</p>
+      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Carregue o CSV <strong>acompanhamento-cidadaos-vinculados</strong> (exportado do e-SUS) para ter uma lista rápida de nome, ACS e última atualização cadastral de toda a população. Clique num nome para ver o perfil completo na aba "Perfil do Paciente".</p>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
         <input type="file" id="csvCidadaos" accept=".csv" style="flex:1; min-width:220px; padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:0.85rem;">
         <span id="statusCsvCidadaos" style="font-size:0.82rem; color:var(--muted);"></span>
       </div>
     </div>
 
-    <div class="kpis" id="kpisCidadaos" style="display:none;">
-      <div class="kpi active" style="cursor:default;"><div class="l">Total</div><div class="n" id="kpiCidTotal">0</div></div>
-      <div class="kpi" style="cursor:default; border-top-color:#DC2626;"><div class="l">Cadastro Vencido (&gt;6m)</div><div class="n" id="kpiCidVencido" style="color:#DC2626;">0</div></div>
-      <div class="kpi" style="cursor:default; border-top-color:#198754;"><div class="l">Feminino</div><div class="n" id="kpiCidFem" style="color:#198754;">0</div></div>
-      <div class="kpi" style="cursor:default; border-top-color:#0284C7;"><div class="l">Masculino</div><div class="n" id="kpiCidMasc" style="color:#0284C7;">0</div></div>
-    </div>
-
-    <div class="filtros" id="filtrosMicroCidadaos" style="display:none;">
-      <span class="grupo-label">ACS/Micro:</span>
-      <button class="chip active" data-microc="TODOS" onclick="setFiltroMicroCidadaos('TODOS')">Todas</button>
-    </div>
-
     <div class="card" id="cardTabelaCidadaos" style="display:none;">
       <div class="toolbar">
-        <input type="text" id="buscaTextoCidadaos" placeholder="🔎 Buscar por nome ou CNS..." oninput="paginaAtualCidadaos=1; renderTabelaCidadaos()">
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <label class="chip" style="cursor:pointer;"><input type="checkbox" id="chkSoVencidos" onchange="paginaAtualCidadaos=1; renderTabelaCidadaos()" style="margin-right:6px;">Só vencidos</label>
-          <button class="btn ghost" onclick="gerarPDFCidadaos()">📄 Baixar PDF</button>
-          <button class="btn" id="btnEnviarCidadaos" onclick="enviarCidadaosParaBanco()">📤 Enviar todos para o banco</button>
-        </div>
+        <input type="text" id="buscaTextoCidadaos" placeholder="🔎 Buscar por nome..." oninput="paginaAtualCidadaos=1; renderTabelaCidadaos()">
+        <span class="small" style="color:var(--muted);" id="totalCidadaosResumo"></span>
       </div>
-      <div id="statusEnvioCidadaos" class="small" style="display:none; margin-bottom:12px; font-weight:600; color:var(--primary);"></div>
       <div class="table-responsive" style="overflow-x:auto;">
         <table>
           <thead>
             <tr>
-              <th style="text-align:left;">Cidadão / CNS / DN / Idade</th>
-              <th>Micro</th>
-              <th>Sexo</th>
+              <th style="text-align:left;">Nome</th>
+              <th>ACS</th>
               <th>Última Atualização Cadastral</th>
-              <th>Situação</th>
             </tr>
           </thead>
           <tbody id="tbodyCidadaos"></tbody>
@@ -429,8 +434,10 @@ let filtroMicroCidadaos = 'TODOS';
 function mudarAba(aba) {
     abaAtiva = aba;
     document.getElementById('tabIndicadores').style.display = aba === 'indicadores' ? 'block' : 'none';
+    document.getElementById('tabPerfil').style.display = aba === 'perfil' ? 'block' : 'none';
     document.getElementById('tabCidadaos').style.display = aba === 'cidadaos' ? 'block' : 'none';
     document.getElementById('tabBtnIndicadores').classList.toggle('active', aba === 'indicadores');
+    document.getElementById('tabBtnPerfil').classList.toggle('active', aba === 'perfil');
     document.getElementById('tabBtnCidadaos').classList.toggle('active', aba === 'cidadaos');
 }
 
@@ -473,84 +480,28 @@ function processarCidadaos(data) {
     const header = data[headerIndex];
     const idx = nome => header.findIndex(h => normalizeTxt(h) === normalizeTxt(nome));
     const col = {
-        micro: idx('Microárea'), endereco: idx('Endereço'), doc: idx('CPF/CNS'),
-        nome: idx('Nome'), idade: idx('Idade'), sexo: idx('Sexo'),
-        nascimento: idx('Data de nascimento'), celular: idx('Telefone celular'),
-        atualizacao: idx('Última atualização cadastral'), origem: idx('Origem'),
+        micro: idx('Microárea'), nome: idx('Nome'),
+        atualizacao: idx('Última atualização cadastral'),
     };
 
-    const seisMesesAtras = new Date();
-    seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
-
     todosOsCidadaos = data.slice(headerIndex + 1)
-        .filter(r => r.length > 5 && r[col.nome])
-        .map(r => {
-            const atualizacaoStr = col.atualizacao !== -1 ? (r[col.atualizacao] || '').toString().replace(/"/g, '').trim() : '';
-            const dtAtualizacao = converterDataBR(atualizacaoStr);
-            const vencido = !dtAtualizacao || dtAtualizacao < seisMesesAtras;
-            return {
-                nome: r[col.nome] || '',
-                cns: col.doc !== -1 ? (r[col.doc] || '-').toString().replace(/"/g, '').trim() : '-',
-                nasc: col.nascimento !== -1 ? (r[col.nascimento] || '').toString().replace(/"/g, '').trim() : '',
-                idade: col.idade !== -1 ? (r[col.idade] || '').toString().trim() : '',
-                sexo: col.sexo !== -1 ? (r[col.sexo] || '').toString().trim() : '',
-                micro: col.micro !== -1 ? (r[col.micro] || 'Não informada').toString().replace(/"/g, '').trim() : 'Não informada',
-                endereco: col.endereco !== -1 ? (r[col.endereco] || '-').toString().replace(/"/g, '').trim() : '-',
-                celular: col.celular !== -1 ? (r[col.celular] || '-').toString().replace(/"/g, '').trim() : '-',
-                origem: col.origem !== -1 ? (r[col.origem] || '-').toString().replace(/"/g, '').trim() : '-',
-                atualizacao: atualizacaoStr || 'NUNCA ATUALIZADO',
-                vencido,
-            };
-        });
+        .filter(r => r.length > 3 && r[col.nome])
+        .map(r => ({
+            nome: (r[col.nome] || '').toString().replace(/"/g, '').trim(),
+            micro: col.micro !== -1 ? (r[col.micro] || '').toString().replace(/"/g, '').trim() : '',
+            atualizacao: col.atualizacao !== -1 ? (r[col.atualizacao] || 'NUNCA ATUALIZADO').toString().replace(/"/g, '').trim() || 'NUNCA ATUALIZADO' : 'NUNCA ATUALIZADO',
+        }))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
 
-    montarResumoCidadaos();
-    criarFiltrosMicroCidadaos();
     renderTabelaCidadaos();
-    document.getElementById('kpisCidadaos').style.display = 'flex';
-    document.getElementById('filtrosMicroCidadaos').style.display = 'flex';
     document.getElementById('cardTabelaCidadaos').style.display = 'block';
-}
-
-function montarResumoCidadaos() {
-    document.getElementById('kpiCidTotal').textContent = todosOsCidadaos.length;
-    document.getElementById('kpiCidVencido').textContent = todosOsCidadaos.filter(c => c.vencido).length;
-    document.getElementById('kpiCidFem').textContent = todosOsCidadaos.filter(c => normalizeTxt(c.sexo) === 'feminino').length;
-    document.getElementById('kpiCidMasc').textContent = todosOsCidadaos.filter(c => normalizeTxt(c.sexo) === 'masculino').length;
-}
-
-function criarFiltrosMicroCidadaos() {
-    const micros = [...new Set(todosOsCidadaos.map(c => normalizarMicro(c.micro) || c.micro))].sort((a, b) => {
-        const na = parseFloat(a), nb = parseFloat(b);
-        if (!isNaN(na) && !isNaN(nb)) return na - nb;
-        return String(a).localeCompare(String(b));
-    });
-    const group = document.getElementById('filtrosMicroCidadaos');
-    group.querySelectorAll('[data-microc]:not([data-microc="TODOS"])').forEach(b => b.remove());
-    micros.forEach(m => {
-        const btn = document.createElement('button');
-        btn.className = 'chip';
-        btn.dataset.microc = m;
-        btn.textContent = /^\d+$/.test(m) ? `Micro ${m}` : m;
-        btn.onclick = () => setFiltroMicroCidadaos(m);
-        group.appendChild(btn);
-    });
-}
-function setFiltroMicroCidadaos(m) {
-    filtroMicroCidadaos = m;
-    document.querySelectorAll('#filtrosMicroCidadaos .chip').forEach(b => b.classList.toggle('active', b.dataset.microc === m));
-    paginaAtualCidadaos = 1;
-    renderTabelaCidadaos();
+    document.getElementById('totalCidadaosResumo').textContent = `${todosOsCidadaos.length} cidadãos carregados`;
 }
 
 function listaFiltradaCidadaos() {
-    let lista = todosOsCidadaos.slice();
-    if (filtroMicroCidadaos !== 'TODOS') {
-        lista = lista.filter(c => (normalizarMicro(c.micro) || c.micro) === filtroMicroCidadaos);
-    }
-    if (document.getElementById('chkSoVencidos').checked) lista = lista.filter(c => c.vencido);
     const busca = (document.getElementById('buscaTextoCidadaos').value || '').trim().toUpperCase();
-    if (busca) lista = lista.filter(c => c.nome.toUpperCase().includes(busca) || c.cns.includes(busca));
-    return lista;
+    if (!busca) return todosOsCidadaos;
+    return todosOsCidadaos.filter(c => c.nome.toUpperCase().includes(busca));
 }
 
 let paginaAtualCidadaos = 1;
@@ -564,19 +515,13 @@ function renderTabelaCidadaos() {
     const pagina = lista.slice(inicio, inicio + TAMANHO_PAGINA_CIDADAOS);
 
     const tbody = document.getElementById('tbodyCidadaos');
-    // usa DocumentFragment em vez de innerHTML acumulado — renderiza só 100 linhas por vez, muito mais rápido
     const frag = document.createDocumentFragment();
     pagina.forEach(c => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="nome-cel">
-                <div class="nome">${c.nome}</div>
-                <div class="meta">CNS: ${c.cns} · DN: ${c.nasc || '-'} · ${c.idade}</div>
-            </td>
-            <td class="text-center">${/^\d+$/.test(normalizarMicro(c.micro) || '') ? 'Micro ' + normalizarMicro(c.micro) : c.micro}</td>
-            <td class="text-center">${c.sexo || '-'}</td>
+            <td class="nome-cel"><div class="nome" onclick="verPerfilDoNome('${c.nome.replace(/'/g, "\\'")}')">${c.nome}</div></td>
+            <td class="text-center">${nomeAcs(c.micro)}</td>
             <td class="text-center">${c.atualizacao}</td>
-            <td class="text-center">${c.vencido ? '<span class="badge-classe c-regular">VENCIDO</span>' : '<span class="badge-classe c-otimo">EM DIA</span>'}</td>
         `;
         frag.appendChild(tr);
     });
@@ -584,7 +529,7 @@ function renderTabelaCidadaos() {
     tbody.appendChild(frag);
 
     document.getElementById('infoPaginaCidadaos').textContent =
-        lista.length ? `Mostrando ${inicio + 1}–${Math.min(inicio + TAMANHO_PAGINA_CIDADAOS, lista.length)} de ${lista.length} · Página ${paginaAtualCidadaos}/${totalPaginas}` : 'Nenhum cidadão encontrado para esse filtro/busca.';
+        lista.length ? `Mostrando ${inicio + 1}\u2013${Math.min(inicio + TAMANHO_PAGINA_CIDADAOS, lista.length)} de ${lista.length} \u00b7 P\u00e1gina ${paginaAtualCidadaos}/${totalPaginas}` : 'Nenhum cidad\u00e3o encontrado para essa busca.';
     document.getElementById('btnPaginaAnterior').disabled = paginaAtualCidadaos <= 1;
     document.getElementById('btnPaginaProxima').disabled = paginaAtualCidadaos >= totalPaginas;
 }
@@ -594,125 +539,137 @@ function mudarPaginaCidadaos(delta) {
     renderTabelaCidadaos();
 }
 
-// ═══════════════════════════════════════════════
-// ENVIAR CIDADÃOS PARA O BANCO (pacientes + indicador_snapshots "CADASTRO")
-// ═══════════════════════════════════════════════
-async function encontrarOuCriarPacienteCidadao(nome, cns, nascStr) {
-    const nascDate = converterDataBR(nascStr);
-    const nascISO = nascDate ? `${nascDate.getFullYear()}-${String(nascDate.getMonth() + 1).padStart(2, '0')}-${String(nascDate.getDate()).padStart(2, '0')}` : null;
-    const temCns = cns && cns.trim() !== '' && cns.trim() !== '-';
-
-    if (temCns) {
-        const { data, error } = await sb.from('pacientes')
-            .upsert({ cns: cns.trim(), nome, data_nascimento: nascISO }, { onConflict: 'cns' })
-            .select('id').single();
-        if (error) throw error;
-        return data.id;
-    }
-    if (nascISO) {
-        const { data: existente } = await sb.from('pacientes').select('id')
-            .eq('nome', nome).eq('data_nascimento', nascISO).is('cns', null).maybeSingle();
-        if (existente) return existente.id;
-    }
-    const { data: novo, error } = await sb.from('pacientes').insert({ nome, data_nascimento: nascISO }).select('id').single();
-    if (error) throw error;
-    return novo.id;
-}
-
-async function enviarCidadaosParaBanco() {
-    const lista = listaFiltradaCidadaos();
-    if (!lista.length) { alert('Não há cidadãos na lista filtrada atual para enviar.'); return; }
-    if (!confirm(`Enviar ${lista.length} cidadão(s) para a central de dados? Isso pode levar alguns minutos para listas grandes.`)) return;
-
-    const btn = document.getElementById('btnEnviarCidadaos');
-    const status = document.getElementById('statusEnvioCidadaos');
-    btn.disabled = true;
-    status.style.display = 'block';
-
-    let ok = 0, falhas = 0;
-    const hoje = new Date();
-    const dataHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-
-    for (let i = 0; i < lista.length; i++) {
-        const c = lista[i];
-        status.textContent = `Enviando ${i + 1}/${lista.length}: ${c.nome}...`;
-        try {
-            const pacienteId = await encontrarOuCriarPacienteCidadao(c.nome, c.cns, c.nasc);
-            const { error } = await sb.from('indicador_snapshots').insert({
-                paciente_id: pacienteId,
-                indicador: 'CADASTRO',
-                data_analise: dataHoje,
-                pontuacao: null,
-                classificacao: c.atualizacao === 'NUNCA ATUALIZADO' ? 'Nunca atualizado' : (c.vencido ? 'Vencido' : 'Em dia'),
-                microarea: normalizarMicro(c.micro) || null,
-                dados: {
-                    idade: c.idade, sexo: c.sexo, endereco: c.endereco, telefone: c.celular,
-                    origem: c.origem, ultimaAtualizacaoCadastral: c.atualizacao,
-                },
-            });
-            if (error) throw error;
-            ok++;
-        } catch (err) {
-            console.error('Erro ao enviar', c.nome, err);
-            falhas++;
-        }
-    }
-
-    btn.disabled = false;
-    status.textContent = `✅ Envio concluído: ${ok} cidadão(s) enviado(s)${falhas ? `, ${falhas} com erro (veja o console)` : ''}.`;
+function verPerfilDoNome(nome) {
+    mudarAba('perfil');
+    document.getElementById('buscaTextoPerfil').value = nome;
+    renderPerfil();
 }
 
 // ═══════════════════════════════════════════════
-// PDF — TODOS OS CIDADÃOS
+// PERFIL DO PACIENTE — visão consolidada por categoria
 // ═══════════════════════════════════════════════
-function gerarPDFCidadaos() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const lista = listaFiltradaCidadaos();
+const CATEGORIAS = {
+    'C2': { label: 'Criança (Desenvolvimento Infantil)', icone: '👶', cor: '#0284C7' },
+    'C3_GESTANTE': { label: 'Gestante', icone: '🤰', cor: '#DB2777' },
+    'C3_PUERPERIO': { label: 'Puérpera', icone: '🤱', cor: '#DB2777' },
+    'C4': { label: 'Diabetes (DM)', icone: '🩸', cor: '#DC2626' },
+    'C5': { label: 'Hipertensão (HAS)', icone: '❤️', cor: '#DC2626' },
+    'C6': { label: 'Pessoa Idosa', icone: '👴', cor: '#7C3AED' },
+    'C7': { label: 'Mulher (Prevenção do Câncer)', icone: '♀️', cor: '#DB2777' },
+    'CADASTRO': { label: 'Situação Cadastral', icone: '📋', cor: '#64748B' },
+};
 
-    doc.setFontSize(13);
-    doc.setTextColor(0, 91, 142);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TODOS OS CIDADÃOS VINCULADOS À UNIDADE', 14, 12);
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Micro: ${filtroMicroCidadaos}  |  Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 18);
+function extrairPendencias(dados) {
+    if (!dados) return [];
+    if (Array.isArray(dados.pendencias)) return dados.pendencias;
+    if (dados.pendencias && typeof dados.pendencias === 'object') {
+        return Object.entries(dados.pendencias)
+            .filter(([, v]) => v === false || (Array.isArray(v) && v.length))
+            .map(([k]) => humanizarChave(k));
+    }
+    return [];
+}
 
-    const body = lista.map((c, idx) => [idx + 1, c.nome, c.cns, c.nasc || '-', c.idade, c.sexo, c.micro, c.atualizacao, c.vencido ? 'VENCIDO' : 'EM DIA']);
+function renderPerfil() {
+    const area = document.getElementById('areaPerfil');
+    const busca = (document.getElementById('buscaTextoPerfil').value || '').trim().toUpperCase();
 
-    doc.autoTable({
-        startY: 24,
-        head: [['#', 'Nome', 'CNS', 'DN', 'Idade', 'Sexo', 'Micro', 'Últ. Atualização', 'Situação']],
-        body,
-        styles: { fontSize: 6.5, cellPadding: 1.5 },
-        headStyles: { fillColor: [0, 63, 99], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
-        alternateRowStyles: { fillColor: [240, 245, 255] },
-        margin: { left: 7, right: 7 },
+    if (!busca) {
+        area.innerHTML = `<div class="vazio"><div class="ico">🔎</div><div>Digite um nome ou CNS acima para ver o perfil consolidado do paciente.</div></div>`;
+        return;
+    }
+
+    const encontrados = todosRegistros.filter(r => {
+        const p = r.pacientes || {};
+        return (p.nome || '').toUpperCase().includes(busca) || (p.cns || '').includes(busca);
     });
 
-    doc.save(`Cidadaos_Vinculados_${new Date().toISOString().slice(0, 10)}.pdf`);
+    if (!encontrados.length) {
+        area.innerHTML = `<div class="vazio"><div class="ico">🗂️</div><div>Sem nenhum dado analisado nos sistemas de indicador para esse nome/CNS.</div></div>`;
+        return;
+    }
+
+    // agrupa por paciente
+    const grupos = {};
+    encontrados.forEach(r => {
+        const pid = r.paciente_id;
+        if (!grupos[pid]) grupos[pid] = { paciente: r.pacientes, registros: [] };
+        grupos[pid].registros.push(r);
+    });
+
+    area.innerHTML = Object.values(grupos).map(g => {
+        const p = g.paciente || {};
+
+        // mantém só o mais recente de cada indicador
+        const maisRecentePorIndicador = {};
+        g.registros.forEach(r => {
+            const atual = maisRecentePorIndicador[r.indicador];
+            if (!atual || r.data_analise > atual.data_analise) maisRecentePorIndicador[r.indicador] = r;
+        });
+
+        const blocos = Object.values(maisRecentePorIndicador).map(r => {
+            const cat = CATEGORIAS[r.indicador] || { label: r.indicador, icone: '📄', cor: '#64748B' };
+            const pendencias = extrairPendencias(r.dados);
+            return `
+                <div class="categoria-bloco" style="--cor:${cat.cor};">
+                    <div class="titulo">${cat.icone} ${cat.label}</div>
+                    <div class="data-analise">Última análise: ${formatBR(r.data_analise)}${r.classificacao ? ` · ${r.pontuacao != null ? r.pontuacao + ' · ' : ''}${r.classificacao}` : ''}</div>
+                    <div class="pendencias">
+                        ${pendencias.length ? pendencias.map(pd => `<span class="tag">${pd}</span>`).join('') : `<span class="em-dia-txt">✔️ Sem pendências registradas</span>`}
+                    </div>
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="perfil-card">
+                <div class="cabecalho">
+                    <div>
+                        <h4>${p.nome || '(sem nome)'}</h4>
+                        <div class="meta">CNS: ${p.cns || '-'} · DN: ${formatBR(p.data_nascimento)} · ${calcularIdade(p.data_nascimento)}</div>
+                    </div>
+                    <span class="badge-acs">${nomeAcs(g.registros[0].microarea)}</span>
+                </div>
+                <div class="categorias-grid">${blocos}</div>
+            </div>`;
+    }).join('');
 }
 
 // ═══════════════════════════════════════════════
 // CARREGAR DADOS DO SUPABASE
+
 // ═══════════════════════════════════════════════
 async function carregarDados() {
     document.getElementById('tbodyPrincipal').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">Carregando...</td></tr>';
-    const { data, error } = await sb
-        .from('indicador_snapshots')
-        .select('*, pacientes(id,nome,cns,data_nascimento)')
-        .order('data_analise', { ascending: false })
-        .limit(2000);
 
-    if (error) {
-        document.getElementById('tbodyPrincipal').innerHTML = `<tr><td colspan="6" style="color:#DC2626; padding:16px;">Erro ao carregar: ${error.message}</td></tr>`;
+    // O Supabase nunca devolve mais de 1000 linhas por requisição, não importa o .limit() pedido.
+    // Por isso buscamos em "páginas" de 1000, juntando tudo até a última página vir incompleta.
+    const TAMANHO_PAGINA = 1000;
+    let todos = [];
+    let desde = 0;
+    let paginaErro = null;
+
+    while (true) {
+        const { data, error } = await sb
+            .from('indicador_snapshots')
+            .select('*, pacientes(id,nome,cns,data_nascimento)')
+            .order('data_analise', { ascending: false })
+            .range(desde, desde + TAMANHO_PAGINA - 1);
+
+        if (error) { paginaErro = error; break; }
+        todos = todos.concat(data || []);
+        if (!data || data.length < TAMANHO_PAGINA) break;
+        desde += TAMANHO_PAGINA;
+    }
+
+    if (paginaErro) {
+        document.getElementById('tbodyPrincipal').innerHTML = `<tr><td colspan="6" style="color:#DC2626; padding:16px;">Erro ao carregar: ${paginaErro.message}</td></tr>`;
         return;
     }
-    todosRegistros = data || [];
+    todosRegistros = todos;
     montarFiltrosDinamicos();
     atualizarKPIs();
     renderTabela();
+    renderPerfil();
 }
 
 function normalizarMicro(v) {
@@ -720,6 +677,15 @@ function normalizarMicro(v) {
     const s = String(v).trim();
     if (!s) return null;
     return /^\d+$/.test(s) ? String(parseInt(s, 10)).padStart(2, '0') : s;
+}
+
+const MAPA_ACS = {
+    "05": "Rosangela", "06": "Nova", "12": "Sergio", "13": "Iane", "14": "Naiara", "15": "Isabel",
+};
+function nomeAcs(micro) {
+    const norm = normalizarMicro(micro);
+    if (!norm) return 'Não informada';
+    return MAPA_ACS[norm] || `Micro ${norm}`;
 }
 
 function montarFiltrosDinamicos() {
@@ -747,7 +713,7 @@ function montarFiltrosDinamicos() {
     if (micros.length) {
         const label = document.createElement('span');
         label.className = 'grupo-label';
-        label.textContent = 'Micro:';
+        label.textContent = 'ACS:';
         grupoMicro.appendChild(label);
         const btnTodas = document.createElement('button');
         btnTodas.className = 'chip active';
@@ -759,7 +725,7 @@ function montarFiltrosDinamicos() {
             const btn = document.createElement('button');
             btn.className = 'chip';
             btn.dataset.micro = m;
-            btn.textContent = `Micro ${m}`;
+            btn.textContent = nomeAcs(m);
             btn.onclick = () => setFiltroMicro(m);
             grupoMicro.appendChild(btn);
         });
@@ -859,7 +825,7 @@ function renderTabela() {
             </td>
             <td class="text-center"><span class="badge-ind">${r.indicador}</span></td>
             <td class="text-center">${formatBR(r.data_analise)}</td>
-            <td class="text-center">${normalizarMicro(r.microarea) || '-'}</td>
+            <td class="text-center">${nomeAcs(r.microarea)}</td>
             <td class="text-center">${r.classificacao ? `<span class="badge-classe ${classeCss(r.classificacao)}">${r.pontuacao != null ? r.pontuacao + ' · ' : ''}${r.classificacao}</span>` : '-'}</td>
             <td class="acoes">
                 <button class="acao-btn" onclick="verDetalhes('${r.id}')" title="Ver detalhes">👁️</button>
@@ -1006,14 +972,14 @@ function gerarPDFCentral() {
             calcularIdade(p.data_nascimento),
             r.indicador,
             formatBR(r.data_analise),
-            normalizarMicro(r.microarea) || '-',
+            nomeAcs(r.microarea),
             r.classificacao ? `${r.pontuacao != null ? r.pontuacao + ' - ' : ''}${r.classificacao}` : '-',
         ];
     });
 
     doc.autoTable({
         startY: 24,
-        head: [['#', 'Nome', 'CNS', 'DN', 'Idade', 'Indicador', 'Data análise', 'Micro', 'Classificação']],
+        head: [['#', 'Nome', 'CNS', 'DN', 'Idade', 'Indicador', 'Data análise', 'ACS', 'Classificação']],
         body,
         styles: { fontSize: 6.5, cellPadding: 1.5 },
         headStyles: { fillColor: [0, 63, 99], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
