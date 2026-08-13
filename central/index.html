@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Central de Dados — Painel do Enfermeiro</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0284C7">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -234,6 +238,8 @@ tbody tr:hover { background: #F8FAFC; }
     <h1>📚 Central de Dados dos Pacientes</h1>
     <p>Histórico consolidado de todas as análises enviadas pelos indicadores (C2 a C7, Tríade). Busque por nome ou CNS, ou navegue pelos filtros.</p>
   </div>
+
+  <div id="avisoOffline" style="display:none; background:#FEF3C7; color:#92400E; padding:10px 16px; border-radius:10px; font-size:0.85rem; margin:0 0 16px; text-align:center; font-weight:600;"></div>
 
   <div class="date-bar">
     <span>Bem-vindo, <strong id="welcomeUserName">Enfermeiro(a)</strong></span>
@@ -491,6 +497,51 @@ function renderPerfil() {
 }
 
 // ═══════════════════════════════════════════════
+// CACHE OFFLINE (IndexedDB) — guarda automaticamente a última
+// foto bem-sucedida dos dados, pra Central abrir mesmo sem internet
+// ═══════════════════════════════════════════════
+const DB_NAME_CACHE = 'central_aps_cache';
+const STORE_CACHE = 'snapshot';
+
+function abrirDBCache() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME_CACHE, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(STORE_CACHE);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+async function salvarCacheOffline(registros) {
+    try {
+        const db = await abrirDBCache();
+        const tx = db.transaction(STORE_CACHE, 'readwrite');
+        tx.objectStore(STORE_CACHE).put({ registros, salvoEm: new Date().toISOString() }, 'ultima_foto');
+        await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); });
+    } catch (e) { console.warn('Não foi possível salvar o cache offline:', e); }
+}
+async function carregarCacheOffline() {
+    try {
+        const db = await abrirDBCache();
+        const tx = db.transaction(STORE_CACHE, 'readonly');
+        const req = tx.objectStore(STORE_CACHE).get('ultima_foto');
+        return await new Promise((resolve, reject) => {
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error);
+        });
+    } catch (e) { console.warn('Não foi possível ler o cache offline:', e); return null; }
+}
+function mostrarAvisoOffline(salvoEmISO) {
+    const banner = document.getElementById('avisoOffline');
+    const d = new Date(salvoEmISO);
+    const p = n => String(n).padStart(2, '0');
+    banner.textContent = `📵 Sem internet — mostrando dados salvos em ${p(d.getDate())}/${p(d.getMonth() + 1)} às ${p(d.getHours())}:${p(d.getMinutes())}`;
+    banner.style.display = 'block';
+}
+function esconderAvisoOffline() {
+    document.getElementById('avisoOffline').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════
 // CARREGAR DADOS DO SUPABASE
 
 // ═══════════════════════════════════════════════
@@ -504,24 +555,42 @@ async function carregarDados() {
     let desde = 0;
     let paginaErro = null;
 
-    while (true) {
-        const { data, error } = await sb
-            .from('indicador_snapshots')
-            .select('*, pacientes(id,nome,cns,data_nascimento)')
-            .order('data_analise', { ascending: false })
-            .range(desde, desde + TAMANHO_PAGINA - 1);
+    try {
+        while (true) {
+            const { data, error } = await sb
+                .from('indicador_snapshots')
+                .select('*, pacientes(id,nome,cns,data_nascimento)')
+                .order('data_analise', { ascending: false })
+                .range(desde, desde + TAMANHO_PAGINA - 1);
 
-        if (error) { paginaErro = error; break; }
-        todos = todos.concat(data || []);
-        if (!data || data.length < TAMANHO_PAGINA) break;
-        desde += TAMANHO_PAGINA;
+            if (error) { paginaErro = error; break; }
+            todos = todos.concat(data || []);
+            if (!data || data.length < TAMANHO_PAGINA) break;
+            desde += TAMANHO_PAGINA;
+        }
+    } catch (e) {
+        paginaErro = e;
     }
 
     if (paginaErro) {
-        document.getElementById('tbodyPrincipal').innerHTML = `<tr><td colspan="6" style="color:#DC2626; padding:16px;">Erro ao carregar: ${paginaErro.message}</td></tr>`;
+        // Sem rede (ou erro real) — cai pra última foto salva localmente, se existir
+        const cache = await carregarCacheOffline();
+        if (cache && cache.registros && cache.registros.length) {
+            todosRegistros = cache.registros;
+            mostrarAvisoOffline(cache.salvoEm);
+            montarFiltrosDinamicos();
+            atualizarKPIs();
+            renderTabela();
+            renderPerfil();
+            return;
+        }
+        document.getElementById('tbodyPrincipal').innerHTML = `<tr><td colspan="6" style="color:#DC2626; padding:16px;">Erro ao carregar: ${paginaErro.message || 'sem conexão e sem dados salvos localmente ainda'}</td></tr>`;
         return;
     }
+
     todosRegistros = todos;
+    esconderAvisoOffline();
+    salvarCacheOffline(todos); // guarda a foto em segundo plano, não bloqueia a tela
     montarFiltrosDinamicos();
     atualizarKPIs();
     renderTabela();
@@ -919,6 +988,13 @@ function reiniciarTimerInatividade() {
 ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evento => {
     document.addEventListener(evento, reiniciarTimerInatividade, { passive: true });
 });
+
+// ── PWA: registra o service worker (cache do app pra abrir offline) ──
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.warn('Service worker não registrado:', err));
+    });
+}
 </script>
 </body>
 </html>
