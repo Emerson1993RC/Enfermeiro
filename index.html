@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel do Enfermeiro — Croatá dos Martins</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ── TOKENS ── */
 :root {
@@ -115,10 +116,98 @@ body {
   color: rgba(255,255,255,.7);
   font-size: .78rem;
   text-align: center;
-  padding: 7px;
+  padding: 7px 16px;
   letter-spacing: .3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: relative;
 }
 .date-bar strong { color: #fff; }
+.date-bar-actions { display: flex; gap: 10px; margin-left: auto; }
+.db-link {
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.22);
+  color: #fff;
+  font-size: .74rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: .15s;
+}
+.db-link:hover { background: rgba(255,255,255,.22); }
+
+/* ── LOGIN GATE ── */
+#loginGate {
+  position: fixed; inset: 0; z-index: 999;
+  background: linear-gradient(135deg, var(--primary-d) 0%, var(--primary) 55%, #0284C7 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+}
+.login-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 380px;
+}
+.login-card .lc-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,91,142,.08); color: var(--primary);
+  border-radius: 20px; padding: 4px 14px; font-size: .72rem; font-weight: 700;
+  letter-spacing: .4px; text-transform: uppercase; margin-bottom: 14px;
+}
+.login-card h2 {
+  font-family: 'Sora', sans-serif; font-size: 1.5rem; font-weight: 800;
+  color: var(--text); margin-bottom: 6px;
+}
+.login-card p.lc-sub { color: var(--muted); font-size: .85rem; margin-bottom: 24px; }
+.lc-field { margin-bottom: 16px; }
+.lc-field label { display: block; font-size: .78rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.lc-field input {
+  width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+  border-radius: 10px; font-size: .92rem; font-family: inherit; color: var(--text);
+  transition: .15s;
+}
+.lc-field input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,91,142,.12); }
+.lc-btn {
+  width: 100%; background: var(--primary); color: #fff; border: none;
+  padding: 12px; border-radius: 10px; font-size: .92rem; font-weight: 700;
+  cursor: pointer; transition: .15s; font-family: inherit;
+}
+.lc-btn:hover { background: var(--primary-d); }
+.lc-btn:disabled { opacity: .6; cursor: not-allowed; }
+.lc-error {
+  background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5;
+  border-radius: 8px; padding: 9px 12px; font-size: .8rem; margin-bottom: 16px; display: none;
+}
+.lc-error.show { display: block; }
+
+/* ── MODAL TROCAR SENHA ── */
+#pwModalOverlay {
+  position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,.55);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+#pwModalOverlay.show { display: flex; }
+.pw-modal {
+  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  padding: 32px; width: 100%; max-width: 360px;
+}
+.pw-modal h3 { font-family: 'Sora', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 18px; color: var(--text); }
+.pw-modal .lc-btn-row { display: flex; gap: 10px; margin-top: 6px; }
+.pw-modal .lc-btn-secondary {
+  background: var(--bg); color: var(--text); border: 1.5px solid var(--border);
+  padding: 12px; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; flex: 1; font-family: inherit;
+}
+.pw-modal .lc-btn { flex: 1; }
+.pw-msg { font-size: .8rem; margin-top: 10px; display: none; }
+.pw-msg.show-ok { display: block; color: #15803D; }
+.pw-msg.show-err { display: block; color: #B91C1C; }
 
 /* ── MAIN CONTENT ── */
 .main {
@@ -305,6 +394,50 @@ footer a { color: #7DD3FC; text-decoration: none; }
 </head>
 <body>
 
+<!-- ══════════════ GATE DE LOGIN ══════════════ -->
+<div id="loginGate">
+  <div class="login-card">
+    <div class="lc-badge">🏥 USF I — Croatá dos Martins</div>
+    <h2>Painel do Enfermeiro</h2>
+    <p class="lc-sub">Entre com seu CPF e senha para continuar.</p>
+    <div class="lc-error" id="loginError"></div>
+    <form id="loginForm">
+      <div class="lc-field">
+        <label for="loginCpf">CPF</label>
+        <input type="text" id="loginCpf" inputmode="numeric" placeholder="000.000.000-00" autocomplete="username" required>
+      </div>
+      <div class="lc-field">
+        <label for="loginSenha">Senha</label>
+        <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="lc-btn" id="loginBtn">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL TROCAR SENHA ══════════════ -->
+<div id="pwModalOverlay">
+  <div class="pw-modal">
+    <h3>🔑 Trocar senha</h3>
+    <div class="lc-field">
+      <label for="pwNova">Nova senha</label>
+      <input type="password" id="pwNova" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+    </div>
+    <div class="lc-field">
+      <label for="pwConfirma">Confirmar nova senha</label>
+      <input type="password" id="pwConfirma" placeholder="Repita a nova senha" autocomplete="new-password">
+    </div>
+    <div class="pw-msg" id="pwMsg"></div>
+    <div class="lc-btn-row">
+      <button type="button" class="lc-btn-secondary" id="pwCancelar">Cancelar</button>
+      <button type="button" class="lc-btn" id="pwSalvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CONTEÚDO DO PAINEL (só aparece logado) ══════════════ -->
+<div id="appContent" style="display:none;">
+
 <!-- HERO -->
 <div class="hero">
   <div class="hero-inner">
@@ -320,7 +453,11 @@ footer a { color: #7DD3FC; text-decoration: none; }
 
 <!-- DATE BAR -->
 <div class="date-bar">
-  Bem-vindo, <strong>Enfermeiro Emerson</strong> &nbsp;·&nbsp; <span id="dateStr"></span>
+  <span>Bem-vindo, <strong id="welcomeUserName">Enfermeiro(a)</strong> &nbsp;·&nbsp; <span id="dateStr"></span></span>
+  <span class="date-bar-actions">
+    <button class="db-link" id="btnTrocarSenha" type="button">🔑 Trocar senha</button>
+    <button class="db-link" id="btnLogout" type="button">↪ Sair</button>
+  </span>
 </div>
 
 <div class="main">
@@ -436,7 +573,7 @@ footer a { color: #7DD3FC; text-decoration: none; }
           <span class="link-dot green"></span>
           <span>
             <span class="link-label">Triade</span>
-            <span class="link-sub">Avaliando HAS,DM e +60</span>
+            <span class="link-sub">Avaliando HAS,DM e 60+</span>
           </span>
           <span class="link-arrow">→</span>
         </a>
@@ -577,11 +714,187 @@ Por Emerson Rodrigues — Enfermeiro de UBS</span>
   &nbsp;·&nbsp; <span id="footerDate"></span>
 </footer>
 
+</div><!-- /#appContent -->
+
 <script>
   const now = new Date();
   const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
   document.getElementById('dateStr').textContent = now.toLocaleDateString('pt-BR', opts);
   document.getElementById('footerDate').textContent = now.toLocaleDateString('pt-BR');
+</script>
+
+<!-- ══════════════ AUTENTICAÇÃO (SUPABASE) ══════════════ -->
+<script>
+// ─────────────────────────────────────────────
+// 1) CONFIGURAÇÃO — troque pelos dados do SEU projeto
+//    (Supabase → Project Settings → API)
+// ─────────────────────────────────────────────
+const SUPABASE_URL = 'https://pwhumwbiyarhicknrruk.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_veuLl7A8rlb7r5odrq7mOg_R2oXl_Gt';
+const DOMINIO_LOGIN = 'enfermeiro.local'; // domínio fictício usado para transformar CPF em e-mail interno
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ─────────────────────────────────────────────
+// 2) HELPERS
+// ─────────────────────────────────────────────
+function apenasNumeros(str) {
+    return (str || '').replace(/\D/g, '');
+}
+function cpfParaEmail(cpf) {
+    return `${apenasNumeros(cpf)}@${DOMINIO_LOGIN}`;
+}
+function mostrarPainel(mostrar) {
+    document.getElementById('loginGate').style.display = mostrar ? 'none' : 'flex';
+    document.getElementById('appContent').style.display = mostrar ? 'block' : 'none';
+}
+function formatarCpfInput(el) {
+    el.addEventListener('input', () => {
+        let v = apenasNumeros(el.value).slice(0, 11);
+        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+        el.value = v;
+    });
+}
+formatarCpfInput(document.getElementById('loginCpf'));
+
+// ─────────────────────────────────────────────
+// 3) CARREGAR PERFIL E ABRIR O PAINEL
+// ─────────────────────────────────────────────
+async function carregarPerfilEAbrir(userId) {
+    const { data: perfil, error } = await sb
+        .from('profiles')
+        .select('nome_completo')
+        .eq('id', userId)
+        .single();
+
+    document.getElementById('welcomeUserName').textContent =
+        (!error && perfil && perfil.nome_completo) ? perfil.nome_completo : 'Enfermeiro(a)';
+    mostrarPainel(true);
+    reiniciarTimerInatividade();
+}
+
+// ─────────────────────────────────────────────
+// 4) VERIFICAR SESSÃO AO CARREGAR A PÁGINA
+// ─────────────────────────────────────────────
+(async function iniciar() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+        await carregarPerfilEAbrir(session.user.id);
+    } else {
+        mostrarPainel(false);
+    }
+})();
+
+// ─────────────────────────────────────────────
+// 5) LOGIN
+// ─────────────────────────────────────────────
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const cpf = document.getElementById('loginCpf').value;
+    const senha = document.getElementById('loginSenha').value;
+    const btn = document.getElementById('loginBtn');
+    const errBox = document.getElementById('loginError');
+    errBox.classList.remove('show');
+
+    if (apenasNumeros(cpf).length !== 11) {
+        errBox.textContent = 'Digite um CPF válido (11 dígitos).';
+        errBox.classList.add('show');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Entrando...';
+
+    const { data, error } = await sb.auth.signInWithPassword({
+        email: cpfParaEmail(cpf),
+        password: senha,
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+
+    if (error) {
+        errBox.textContent = 'CPF ou senha incorretos.';
+        errBox.classList.add('show');
+        return;
+    }
+
+    document.getElementById('loginSenha').value = '';
+    await carregarPerfilEAbrir(data.user.id);
+});
+
+// ─────────────────────────────────────────────
+// 6) LOGOUT
+// ─────────────────────────────────────────────
+async function fazerLogout() {
+    await sb.auth.signOut();
+    mostrarPainel(false);
+}
+document.getElementById('btnLogout').addEventListener('click', fazerLogout);
+
+// ─────────────────────────────────────────────
+// 6b) LOGOUT AUTOMÁTICO POR INATIVIDADE (5 minutos)
+// ─────────────────────────────────────────────
+const TEMPO_INATIVIDADE_MS = 5 * 60 * 1000; // 5 minutos
+let timerInatividade = null;
+
+function reiniciarTimerInatividade() {
+    if (document.getElementById('appContent').style.display === 'none') return; // só conta se estiver logado
+    clearTimeout(timerInatividade);
+    timerInatividade = setTimeout(async () => {
+        await fazerLogout();
+        const errBox = document.getElementById('loginError');
+        errBox.textContent = 'Sessão encerrada por inatividade. Faça login novamente.';
+        errBox.classList.add('show');
+    }, TEMPO_INATIVIDADE_MS);
+}
+
+['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evento => {
+    document.addEventListener(evento, reiniciarTimerInatividade, { passive: true });
+});
+
+// ─────────────────────────────────────────────
+// 7) TROCAR SENHA
+// ─────────────────────────────────────────────
+const pwOverlay = document.getElementById('pwModalOverlay');
+document.getElementById('btnTrocarSenha').addEventListener('click', () => {
+    document.getElementById('pwNova').value = '';
+    document.getElementById('pwConfirma').value = '';
+    const msg = document.getElementById('pwMsg');
+    msg.className = 'pw-msg';
+    msg.textContent = '';
+    pwOverlay.classList.add('show');
+});
+document.getElementById('pwCancelar').addEventListener('click', () => pwOverlay.classList.remove('show'));
+
+document.getElementById('pwSalvar').addEventListener('click', async () => {
+    const nova = document.getElementById('pwNova').value;
+    const confirma = document.getElementById('pwConfirma').value;
+    const msg = document.getElementById('pwMsg');
+
+    if (nova.length < 6) {
+        msg.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
+        msg.className = 'pw-msg show-err';
+        return;
+    }
+    if (nova !== confirma) {
+        msg.textContent = 'As senhas não coincidem.';
+        msg.className = 'pw-msg show-err';
+        return;
+    }
+
+    const { error } = await sb.auth.updateUser({ password: nova });
+    if (error) {
+        msg.textContent = 'Não foi possível trocar a senha: ' + error.message;
+        msg.className = 'pw-msg show-err';
+        return;
+    }
+    msg.textContent = 'Senha alterada com sucesso!';
+    msg.className = 'pw-msg show-ok';
+    setTimeout(() => pwOverlay.classList.remove('show'), 1200);
+});
 </script>
 </body>
 </html>
