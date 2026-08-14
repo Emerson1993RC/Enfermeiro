@@ -252,6 +252,8 @@ tbody tr:hover { background: #F8FAFC; }
     <div class="filtros" style="margin-bottom:0;">
       <button class="chip active" id="tabBtnIndicadores" onclick="mudarAba('indicadores')" style="font-size:0.9rem; padding:8px 18px;">📊 Análises dos Indicadores</button>
       <button class="chip" id="tabBtnPerfil" onclick="mudarAba('perfil')" style="font-size:0.9rem; padding:8px 18px;">🧑‍⚕️ Perfil do Paciente</button>
+      <button class="chip" id="tabBtnTerritorio" onclick="mudarAba('territorio')" style="font-size:0.9rem; padding:8px 18px;">🏘️ Movimentação do Território</button>
+      <button class="chip" id="tabBtnVisitas" onclick="mudarAba('visitas')" style="font-size:0.9rem; padding:8px 18px;">🗓️ Visitas Sincronizadas</button>
     </div>
   </div>
 
@@ -318,6 +320,141 @@ tbody tr:hover { background: #F8FAFC; }
     </div>
     <div id="areaPerfil"></div>
   </div><!-- /#tabPerfil -->
+
+  <div class="main" id="tabTerritorio" style="display:none;">
+    <div class="card mb-3" style="margin-bottom:22px;">
+      <h3 style="font-family:'Sora',sans-serif; font-size:1.15rem; margin-bottom:4px;">🏘️ Movimentação do Território</h3>
+      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Compara a última lista de cidadãos enviada pelo sistema de cadastro com a lista de referência confirmada, mostrando quem entrou, quem saiu e quem mudou de área dentro da unidade.</p>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <button class="btn" onclick="carregarTerritorio()">🔄 Atualizar comparação</button>
+        <button class="btn" style="background:#16A34A; color:#fff;" id="btnConfirmarTerritorio" onclick="confirmarReferenciaTerritorio()" disabled>✅ Confirmar esta lista como referência atual</button>
+        <span class="small" id="statusTerritorio" style="color:var(--muted);"></span>
+      </div>
+    </div>
+
+    <div id="resumoTerritorio" style="display:none;">
+      <div class="d-flex" style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:22px;">
+        <div class="card" style="flex:1; min-width:160px; text-align:center; padding:18px;">
+          <div style="font-size:1.7rem; font-weight:800; color:#16A34A;" id="kpiTerrEntrou">0</div>
+          <div class="small" style="color:var(--muted);">🟢 Entraram</div>
+        </div>
+        <div class="card" style="flex:1; min-width:160px; text-align:center; padding:18px;">
+          <div style="font-size:1.7rem; font-weight:800; color:#DC2626;" id="kpiTerrSaiu">0</div>
+          <div class="small" style="color:var(--muted);">🔴 Saíram</div>
+        </div>
+        <div class="card" style="flex:1; min-width:160px; text-align:center; padding:18px;">
+          <div style="font-size:1.7rem; font-weight:800; color:#D97706;" id="kpiTerrMudou">0</div>
+          <div class="small" style="color:var(--muted);">🔄 Mudaram de área</div>
+        </div>
+        <div class="card" style="flex:1; min-width:160px; text-align:center; padding:18px;">
+          <div style="font-size:1.7rem; font-weight:800; color:var(--primary);" id="kpiTerrReferencia">0</div>
+          <div class="small" style="color:var(--muted);">Na referência atual</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:22px;">
+        <h3 style="font-size:1rem; margin-bottom:10px;">🟢 Entraram na área</h3>
+        <div class="table-responsive" style="overflow-x:auto;">
+          <table>
+            <thead><tr><th style="text-align:left;">Nome</th><th>Micro</th></tr></thead>
+            <tbody id="tbodyTerrEntrou"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:22px;">
+        <h3 style="font-size:1rem; margin-bottom:10px;">🔴 Saíram da área</h3>
+        <div class="table-responsive" style="overflow-x:auto;">
+          <table>
+            <thead><tr><th style="text-align:left;">Nome</th><th>Micro (última conhecida)</th></tr></thead>
+            <tbody id="tbodyTerrSaiu"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:22px;">
+        <h3 style="font-size:1rem; margin-bottom:10px;">🔄 Mudaram de área</h3>
+        <div class="table-responsive" style="overflow-x:auto;">
+          <table>
+            <thead><tr><th style="text-align:left;">Nome</th><th>De</th><th>Para</th></tr></thead>
+            <tbody id="tbodyTerrMudou"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="avisoTerritorio" class="small" style="color:var(--muted); text-align:center; padding:24px;">Clique em "Atualizar comparação" pra carregar.</div>
+
+    <div class="card" style="margin-top:8px;">
+      <h3 style="font-size:1rem; margin-bottom:10px;">📜 Histórico de confirmações</h3>
+      <div class="table-responsive" style="overflow-x:auto;">
+        <table>
+          <thead><tr><th style="text-align:left;">Nome</th><th>Tipo</th><th>De</th><th>Para</th><th>Confirmado em</th></tr></thead>
+          <tbody id="tbodyTerrHistorico"></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /#tabTerritorio -->
+
+  <div class="main" id="tabVisitas" style="display:none;">
+    <div class="card mb-3" style="margin-bottom:22px;">
+      <h3 style="font-family:'Sora',sans-serif; font-size:1.15rem; margin-bottom:4px;">🗓️ Visitas Sincronizadas</h3>
+      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:6px;">Calcula, pra cada paciente da Tríade (DM+HAS+Idoso), a próxima data de visita sugerida — sempre a última visita registrada + 32 dias, garantindo o mínimo de 30 dias exigido pelo indicador, com uma folga de segurança.</p>
+      <p style="color:var(--muted); font-size:0.8rem;">⚠️ A regra de ouro: nunca antecipar. Se a última visita foi dia X, a próxima só vale a partir de X + 30 dias — usamos 32 pra dar uma margem contra fins de semana e feriados.</p>
+    </div>
+
+    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;">
+      <div class="card" style="flex:1; min-width:150px; text-align:center; padding:16px;">
+        <div style="font-size:1.6rem; font-weight:800; color:#DC2626;" id="kpiVisAtrasada">0</div>
+        <div class="small" style="color:var(--muted);">🔴 Atrasadas</div>
+      </div>
+      <div class="card" style="flex:1; min-width:150px; text-align:center; padding:16px;">
+        <div style="font-size:1.6rem; font-weight:800; color:#D97706;" id="kpiVisVencendo">0</div>
+        <div class="small" style="color:var(--muted);">🟠 Vencendo em 7 dias</div>
+      </div>
+      <div class="card" style="flex:1; min-width:150px; text-align:center; padding:16px;">
+        <div style="font-size:1.6rem; font-weight:800; color:#16A34A;" id="kpiVisEmDia">0</div>
+        <div class="small" style="color:var(--muted);">🟢 Em dia</div>
+      </div>
+      <div class="card" style="flex:1; min-width:150px; text-align:center; padding:16px;">
+        <div style="font-size:1.6rem; font-weight:800; color:#64748B;" id="kpiVisSemRegistro">0</div>
+        <div class="small" style="color:var(--muted);">⚪ Sem registro</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+        <span class="grupo-label">Situação:</span>
+        <button class="chip active" data-sit="TODAS" onclick="setFiltroSituacaoVisitas('TODAS')">Todas</button>
+        <button class="chip" data-sit="atrasada" onclick="setFiltroSituacaoVisitas('atrasada')">🔴 Atrasadas</button>
+        <button class="chip" data-sit="vencendo" onclick="setFiltroSituacaoVisitas('vencendo')">🟠 Vencendo</button>
+        <button class="chip" data-sit="em_dia" onclick="setFiltroSituacaoVisitas('em_dia')">🟢 Em dia</button>
+        <button class="chip" data-sit="sem_registro" onclick="setFiltroSituacaoVisitas('sem_registro')">⚪ Sem registro</button>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;" id="filtrosMicroVisitas">
+        <span class="grupo-label">ACS:</span>
+        <button class="chip active" data-micro="TODOS" onclick="setFiltroMicroVisitas('TODOS')">Todas</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-responsive" style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Paciente</th>
+              <th>ACS</th>
+              <th>Última visita</th>
+              <th>Próxima sugerida</th>
+              <th>Situação</th>
+              <th style="text-align:left;">Explicação</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyVisitas"></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /#tabVisitas -->
 
 </div><!-- /#appContent -->
 
@@ -402,9 +539,16 @@ function mudarAba(aba) {
     abaAtiva = aba;
     document.getElementById('tabIndicadores').style.display = aba === 'indicadores' ? 'block' : 'none';
     document.getElementById('tabPerfil').style.display = aba === 'perfil' ? 'block' : 'none';
+    document.getElementById('tabTerritorio').style.display = aba === 'territorio' ? 'block' : 'none';
+    document.getElementById('tabVisitas').style.display = aba === 'visitas' ? 'block' : 'none';
     document.getElementById('tabBtnIndicadores').classList.toggle('active', aba === 'indicadores');
     document.getElementById('tabBtnPerfil').classList.toggle('active', aba === 'perfil');
+    document.getElementById('tabBtnTerritorio').classList.toggle('active', aba === 'territorio');
+    document.getElementById('tabBtnVisitas').classList.toggle('active', aba === 'visitas');
+    if (aba === 'territorio' && !_territorioCarregadoUmaVez) { _territorioCarregadoUmaVez = true; carregarTerritorio(); }
+    if (aba === 'visitas') renderVisitasSincronizadas();
 }
+let _territorioCarregadoUmaVez = false;
 
 // ═══════════════════════════════════════════════
 // PERFIL DO PACIENTE — visão consolidada por categoria
@@ -582,6 +726,7 @@ async function carregarDados() {
             atualizarKPIs();
             renderTabela();
             renderPerfil();
+            renderVisitasSincronizadas();
             return;
         }
         document.getElementById('tbodyPrincipal').innerHTML = `<tr><td colspan="6" style="color:#DC2626; padding:16px;">Erro ao carregar: ${paginaErro.message || 'sem conexão e sem dados salvos localmente ainda'}</td></tr>`;
@@ -595,6 +740,7 @@ async function carregarDados() {
     atualizarKPIs();
     renderTabela();
     renderPerfil();
+    renderVisitasSincronizadas();
 }
 
 function normalizarMicro(v) {
@@ -988,6 +1134,280 @@ function reiniciarTimerInatividade() {
 ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evento => {
     document.addEventListener(evento, reiniciarTimerInatividade, { passive: true });
 });
+
+// ═══════════════════════════════════════════════
+// MOVIMENTAÇÃO DO TERRITÓRIO — compara a lista candidata (enviada pelo
+// cadastro) com a referência confirmada: quem entrou, quem saiu, quem
+// mudou de área. Ao confirmar, a candidata vira a nova referência e o
+// histórico de movimentações é gravado.
+// ═══════════════════════════════════════════════
+let _ultimaComparacaoTerritorio = null; // guarda o resultado calculado, pra usar no confirmar sem refazer a consulta
+
+async function carregarTerritorio() {
+    const status = document.getElementById('statusTerritorio');
+    const aviso = document.getElementById('avisoTerritorio');
+    const resumo = document.getElementById('resumoTerritorio');
+    const btnConfirmar = document.getElementById('btnConfirmarTerritorio');
+
+    status.textContent = 'Carregando...';
+    btnConfirmar.disabled = true;
+    resumo.style.display = 'none';
+    aviso.style.display = 'block';
+    aviso.textContent = 'Carregando...';
+
+    const [refResp, candResp, histResp] = await Promise.all([
+        sb.from('territorio_referencia').select('chave_dedup,nome,cns,micro'),
+        sb.from('territorio_candidata').select('chave_dedup,nome,cns,micro'),
+        sb.from('territorio_movimentacoes').select('nome,tipo,micro_antiga,micro_nova,confirmado_em').order('confirmado_em', { ascending: false }).limit(100),
+    ]);
+
+    if (refResp.error || candResp.error) {
+        status.textContent = '';
+        aviso.textContent = '❌ Erro ao carregar: ' + (refResp.error?.message || candResp.error?.message);
+        return;
+    }
+
+    const referencia = refResp.data || [];
+    const candidata = candResp.data || [];
+    const historico = histResp.data || [];
+
+    if (!candidata.length) {
+        status.textContent = '';
+        aviso.style.display = 'block';
+        aviso.textContent = 'Ainda não há nenhuma lista candidata enviada pelo sistema de cadastro. Envie pelo botão "🏘️ Enviar lista pro território" no cadastro primeiro.';
+        renderHistoricoTerritorio(historico);
+        return;
+    }
+
+    const mapaRef = new Map(referencia.map(p => [p.chave_dedup, p]));
+    const mapaCand = new Map(candidata.map(p => [p.chave_dedup, p]));
+
+    const entraram = [], sairam = [], mudaram = [];
+    mapaCand.forEach((p, chave) => {
+        if (!mapaRef.has(chave)) { entraram.push(p); return; }
+        const antigo = mapaRef.get(chave);
+        if ((antigo.micro || '') !== (p.micro || '')) mudaram.push({ nome: p.nome, de: antigo.micro, para: p.micro });
+    });
+    mapaRef.forEach((p, chave) => { if (!mapaCand.has(chave)) sairam.push(p); });
+
+    entraram.sort((a, b) => a.nome.localeCompare(b.nome));
+    sairam.sort((a, b) => a.nome.localeCompare(b.nome));
+    mudaram.sort((a, b) => a.nome.localeCompare(b.nome));
+
+    _ultimaComparacaoTerritorio = { entraram, sairam, mudaram, candidata };
+
+    document.getElementById('kpiTerrEntrou').textContent = entraram.length;
+    document.getElementById('kpiTerrSaiu').textContent = sairam.length;
+    document.getElementById('kpiTerrMudou').textContent = mudaram.length;
+    document.getElementById('kpiTerrReferencia').textContent = referencia.length;
+
+    document.getElementById('tbodyTerrEntrou').innerHTML = entraram.length
+        ? entraram.map(p => `<tr><td>${p.nome}</td><td class="text-center">${nomeAcs(p.micro)}</td></tr>`).join('')
+        : '<tr><td colspan="2" style="text-align:center; color:var(--muted);">Ninguém novo desde a última referência.</td></tr>';
+
+    document.getElementById('tbodyTerrSaiu').innerHTML = sairam.length
+        ? sairam.map(p => `<tr><td>${p.nome}</td><td class="text-center">${nomeAcs(p.micro)}</td></tr>`).join('')
+        : '<tr><td colspan="2" style="text-align:center; color:var(--muted);">Ninguém saiu desde a última referência.</td></tr>';
+
+    document.getElementById('tbodyTerrMudou').innerHTML = mudaram.length
+        ? mudaram.map(m => `<tr><td>${m.nome}</td><td class="text-center">${nomeAcs(m.de)}</td><td class="text-center">${nomeAcs(m.para)}</td></tr>`).join('')
+        : '<tr><td colspan="3" style="text-align:center; color:var(--muted);">Ninguém mudou de área desde a última referência.</td></tr>';
+
+    renderHistoricoTerritorio(historico);
+
+    aviso.style.display = 'none';
+    resumo.style.display = 'block';
+    const semMudanca = !entraram.length && !sairam.length && !mudaram.length;
+    status.textContent = semMudanca ? '✅ Candidata idêntica à referência — nada pra confirmar.' : `${entraram.length + sairam.length + mudaram.length} mudança(s) encontrada(s).`;
+    btnConfirmar.disabled = semMudanca;
+}
+
+function renderHistoricoTerritorio(historico) {
+    const labelTipo = { entrou: '🟢 Entrou', saiu: '🔴 Saiu', mudou_area: '🔄 Mudou de área' };
+    document.getElementById('tbodyTerrHistorico').innerHTML = historico.length
+        ? historico.map(h => {
+            const d = new Date(h.confirmado_em);
+            const p = n => String(n).padStart(2, '0');
+            const dataFmt = `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
+            return `<tr><td>${h.nome}</td><td>${labelTipo[h.tipo] || h.tipo}</td><td class="text-center">${h.micro_antiga ? nomeAcs(h.micro_antiga) : '-'}</td><td class="text-center">${h.micro_nova ? nomeAcs(h.micro_nova) : '-'}</td><td class="text-center">${dataFmt}</td></tr>`;
+        }).join('')
+        : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">Nenhuma confirmação registrada ainda.</td></tr>';
+}
+
+async function confirmarReferenciaTerritorio() {
+    if (!_ultimaComparacaoTerritorio) return;
+    const { entraram, sairam, mudaram, candidata } = _ultimaComparacaoTerritorio;
+    const total = entraram.length + sairam.length + mudaram.length;
+    if (!confirm(`Confirmar esta lista como nova referência? Isso registra ${total} movimentação(ões) no histórico e substitui a referência anterior.`)) return;
+
+    const btn = document.getElementById('btnConfirmarTerritorio');
+    const status = document.getElementById('statusTerritorio');
+    btn.disabled = true;
+    status.textContent = 'Registrando movimentações...';
+
+    const registros = [
+        ...entraram.map(p => ({ tipo: 'entrou', nome: p.nome, cns: p.cns, micro_antiga: null, micro_nova: p.micro })),
+        ...sairam.map(p => ({ tipo: 'saiu', nome: p.nome, cns: p.cns, micro_antiga: p.micro, micro_nova: null })),
+        ...mudaram.map(m => ({ tipo: 'mudou_area', nome: m.nome, cns: null, micro_antiga: m.de, micro_nova: m.para })),
+    ];
+
+    if (registros.length) {
+        const { error: errHist } = await sb.from('territorio_movimentacoes').insert(registros);
+        if (errHist) {
+            console.error('Erro ao gravar histórico:', errHist);
+            status.textContent = '❌ Erro ao gravar o histórico (veja o console). Referência não foi atualizada.';
+            btn.disabled = false;
+            return;
+        }
+    }
+
+    status.textContent = 'Atualizando referência...';
+    const { error: errDel } = await sb.from('territorio_referencia').delete().neq('chave_dedup', '__nunca__');
+    if (errDel) {
+        console.error('Erro ao limpar referência anterior:', errDel);
+        status.textContent = '❌ Erro ao limpar a referência anterior (veja o console). Histórico já foi gravado.';
+        btn.disabled = false;
+        return;
+    }
+
+    const TAM_LOTE_TERR = 300;
+    for (let i = 0; i < candidata.length; i += TAM_LOTE_TERR) {
+        const lote = candidata.slice(i, i + TAM_LOTE_TERR).map(p => ({ chave_dedup: p.chave_dedup, nome: p.nome, cns: p.cns, micro: p.micro }));
+        const { error } = await sb.from('territorio_referencia').upsert(lote, { onConflict: 'chave_dedup' });
+        if (error) console.error('Erro no lote de referência:', error);
+    }
+
+    status.textContent = '✅ Referência atualizada e histórico registrado.';
+    btn.disabled = true;
+    carregarTerritorio();
+}
+
+// ═══════════════════════════════════════════════
+// VISITAS SINCRONIZADAS — pra cada paciente da Tríade, calcula a próxima
+// data de visita sugerida (última visita + 32 dias, com folga sobre o
+// mínimo de 30 exigido pelo indicador). Reaproveita os dados já
+// carregados em todosRegistros, sem precisar de consulta nova.
+// ═══════════════════════════════════════════════
+const INTERVALO_SUGERIDO_VISITA = 32;
+const JANELA_VENCENDO_VISITA = 7;
+let filtroMicroVisitas = 'TODOS';
+let filtroSituacaoVisitas = 'TODAS';
+
+function parseDataBR(str) {
+    if (!str) return null;
+    const m = String(str).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (!m) return null;
+    return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+}
+function formatDataObj(d) {
+    if (!d) return '-';
+    const p = n => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+
+function calcularVisitasSincronizadas() {
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const maisRecentePorPaciente = {};
+    todosRegistros.filter(r => r.indicador === 'TRIADE').forEach(r => {
+        const pid = r.paciente_id;
+        if (!maisRecentePorPaciente[pid] || r.data_analise > maisRecentePorPaciente[pid].data_analise) {
+            maisRecentePorPaciente[pid] = r;
+        }
+    });
+
+    return Object.values(maisRecentePorPaciente).map(r => {
+        const p = r.pacientes || {};
+        const dados = r.dados || {};
+        const ultimaVisita = parseDataBR(dados.visitaData2) || parseDataBR(dados.visitaData1);
+
+        if (!ultimaVisita) {
+            return { nome: p.nome, micro: r.microarea, ultimaVisita: null, sugerida: null, situacao: 'sem_registro', dias: null };
+        }
+
+        const sugerida = new Date(ultimaVisita);
+        sugerida.setDate(sugerida.getDate() + INTERVALO_SUGERIDO_VISITA);
+        const diffDias = Math.round((sugerida - hoje) / 86400000);
+
+        let situacao;
+        if (diffDias < 0) situacao = 'atrasada';
+        else if (diffDias <= JANELA_VENCENDO_VISITA) situacao = 'vencendo';
+        else situacao = 'em_dia';
+
+        return { nome: p.nome, micro: r.microarea, ultimaVisita, sugerida, situacao, dias: diffDias };
+    }).sort((a, b) => {
+        const ordem = { atrasada: 0, vencendo: 1, em_dia: 2, sem_registro: 3 };
+        if (ordem[a.situacao] !== ordem[b.situacao]) return ordem[a.situacao] - ordem[b.situacao];
+        if (a.dias !== null && b.dias !== null) return a.dias - b.dias;
+        return (a.nome || '').localeCompare(b.nome || '');
+    });
+}
+
+function setFiltroMicroVisitas(m) {
+    filtroMicroVisitas = m;
+    document.querySelectorAll('#filtrosMicroVisitas [data-micro]').forEach(b => b.classList.toggle('active', b.dataset.micro === m));
+    renderVisitasSincronizadas();
+}
+function setFiltroSituacaoVisitas(s) {
+    filtroSituacaoVisitas = s;
+    document.querySelectorAll('[data-sit]').forEach(b => b.classList.toggle('active', b.dataset.sit === s));
+    renderVisitasSincronizadas();
+}
+
+function renderVisitasSincronizadas() {
+    if (!document.getElementById('tbodyVisitas')) return;
+    const todosCalc = calcularVisitasSincronizadas();
+
+    // filtros de ACS/micro dinâmicos, no mesmo padrão das outras abas
+    const micros = [...new Set(todosCalc.map(d => normalizarMicro(d.micro)).filter(Boolean))].sort((a, b) => {
+        const na = parseFloat(a), nb = parseFloat(b);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.localeCompare(b);
+    });
+    const grupo = document.getElementById('filtrosMicroVisitas');
+    grupo.querySelectorAll('[data-micro]:not([data-micro="TODOS"])').forEach(b => b.remove());
+    micros.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'chip' + (filtroMicroVisitas === m ? ' active' : '');
+        btn.dataset.micro = m;
+        btn.textContent = nomeAcs(m);
+        btn.onclick = () => setFiltroMicroVisitas(m);
+        grupo.appendChild(btn);
+    });
+
+    document.getElementById('kpiVisAtrasada').textContent = todosCalc.filter(d => d.situacao === 'atrasada').length;
+    document.getElementById('kpiVisVencendo').textContent = todosCalc.filter(d => d.situacao === 'vencendo').length;
+    document.getElementById('kpiVisEmDia').textContent = todosCalc.filter(d => d.situacao === 'em_dia').length;
+    document.getElementById('kpiVisSemRegistro').textContent = todosCalc.filter(d => d.situacao === 'sem_registro').length;
+
+    const filtrados = todosCalc.filter(d =>
+        (filtroMicroVisitas === 'TODOS' || normalizarMicro(d.micro) === filtroMicroVisitas) &&
+        (filtroSituacaoVisitas === 'TODAS' || d.situacao === filtroSituacaoVisitas)
+    );
+
+    const labelSituacao = { atrasada: '🔴 Atrasada', vencendo: '🟠 Vencendo', em_dia: '🟢 Em dia', sem_registro: '⚪ Sem registro' };
+
+    document.getElementById('tbodyVisitas').innerHTML = filtrados.length ? filtrados.map(d => {
+        let explicacao;
+        if (d.situacao === 'sem_registro') {
+            explicacao = 'Nenhuma visita registrada ainda pra calcular a próxima data.';
+        } else if (d.situacao === 'atrasada') {
+            explicacao = `Já passou da data sugerida (${formatDataObj(d.sugerida)}) — priorize o quanto antes.`;
+        } else {
+            explicacao = `Não faça antes de ${formatDataObj(d.sugerida)} — ficaria com menos de 30 dias desde a última visita (${formatDataObj(d.ultimaVisita)}).`;
+        }
+        const situacaoTxt = d.situacao === 'atrasada' ? `${labelSituacao[d.situacao]} (há ${Math.abs(d.dias)}d)`
+            : d.situacao === 'vencendo' ? `${labelSituacao[d.situacao]} (em ${d.dias}d)`
+            : labelSituacao[d.situacao];
+        return `<tr>
+            <td>${d.nome}</td>
+            <td class="text-center">${nomeAcs(d.micro)}</td>
+            <td class="text-center">${formatDataObj(d.ultimaVisita)}</td>
+            <td class="text-center">${formatDataObj(d.sugerida)}</td>
+            <td class="text-center">${situacaoTxt}</td>
+            <td style="font-size:0.8rem; color:var(--muted);">${explicacao}</td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Nenhum registro encontrado com esses filtros.</td></tr>';
+}
 
 // ── PWA: registra o service worker (cache do app pra abrir offline) ──
 if ('serviceWorker' in navigator) {
