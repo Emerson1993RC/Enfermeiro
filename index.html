@@ -3,17 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Central de Dados — Painel do Enfermeiro</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0284C7">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<title>Painel do Enfermeiro — Croatá dos Martins</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <style>
-/* ── TOKENS (mesma paleta do Painel do Enfermeiro) ── */
+/* ── TOKENS ── */
 :root {
   --bg:        #F0F4F8;
   --surface:   #FFFFFF;
@@ -29,7 +22,9 @@
   --shadow:    0 4px 24px rgba(0,91,142,.10);
   --shadow-lg: 0 12px 40px rgba(0,91,142,.18);
 }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg);
@@ -43,1378 +38,550 @@ body {
 .hero {
   background: linear-gradient(135deg, var(--primary-d) 0%, var(--primary) 55%, #0284C7 100%);
   color: #fff;
-  padding: 40px 32px 32px;
+  padding: 56px 40px 48px;
+  position: relative;
+  overflow: hidden;
 }
-.hero h1 { font-family: 'Sora', sans-serif; font-size: 1.9rem; font-weight: 800; margin-bottom: 6px; }
-.hero p { opacity: .85; font-size: .95rem; max-width: 640px; }
-.hero .voltar {
-  display: inline-block; margin-bottom: 16px; color: #fff; text-decoration: none;
-  font-size: .82rem; font-weight: 600; opacity: .85;
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M44 44v-8h-4v8h-8v4h8v8h4v-8h8v-4h-8zm0-44V0h-4v8h-8v4h8v8h4V12h8V8h-8z'/%3E%3C/g%3E%3C/svg%3E");
 }
-.hero .voltar:hover { opacity: 1; }
+.hero-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.hero-left {}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.hero h1 span { color: #7DD3FC; }
+.hero p {
+  font-size: 1rem;
+  opacity: .82;
+  max-width: 440px;
+  line-height: 1.6;
+}
+.hero-stats {
+  display: flex;
+  gap: 28px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+.hero-stat {
+  text-align: center;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  padding: 12px 20px;
+}
+.hero-stat .n { font-family: 'Sora', sans-serif; font-size: 1.8rem; font-weight: 800; }
+.hero-stat .l { font-size: .72rem; opacity: .75; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+.hero-cross {
+  font-size: 6rem;
+  opacity: .18;
+  line-height: 1;
+  user-select: none;
+}
 
 /* ── DATE BAR ── */
 .date-bar {
   background: var(--primary-d);
   color: rgba(255,255,255,.7);
   font-size: .78rem;
-  padding: 7px 16px;
-  display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;
+  text-align: center;
+  padding: 7px;
+  letter-spacing: .3px;
 }
 .date-bar strong { color: #fff; }
-.date-bar-actions { display: flex; gap: 10px; margin-left: auto; }
-.db-link {
-  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); color: #fff;
-  font-size: .74rem; font-weight: 600; padding: 4px 10px; border-radius: 8px; cursor: pointer; transition: .15s;
-}
-.db-link:hover { background: rgba(255,255,255,.22); }
 
-/* ── MAIN ── */
-.main { max-width: 1200px; width: 100%; margin: 0 auto; padding: 28px 20px 60px; flex: 1; }
-.card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
+/* ── MAIN CONTENT ── */
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px 60px;
+  flex: 1;
+  width: 100%;
+}
 
-/* ── KPI CARDS ── */
-.kpis { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
-.kpi {
-  flex: 1; min-width: 140px; background: var(--surface); border-radius: 12px; padding: 16px;
-  text-align: center; border-top: 4px solid var(--primary); box-shadow: var(--shadow); cursor: pointer; transition: .15s;
+/* ── SECTION LABEL ── */
+.sec-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.kpi:hover { transform: translateY(-2px); }
-.kpi.active { box-shadow: var(--shadow-lg); border-width: 5px; }
-.kpi .n { font-size: 1.7rem; font-weight: 800; color: var(--primary); }
-.kpi .l { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+.sec-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
 
-/* ── FILTROS ── */
-.filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
-.filtros .grupo-label { font-size: .78rem; font-weight: 700; color: var(--muted); margin-right: 4px; }
-.chip {
-  background: var(--surface); border: 1.5px solid var(--border); color: var(--text);
-  font-size: .78rem; font-weight: 600; padding: 5px 13px; border-radius: 20px; cursor: pointer; transition: .15s;
+/* ── MENU CARDS ── */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 48px;
 }
-.chip:hover { border-color: var(--primary); }
-.chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+@media (max-width: 900px) { .menu-grid { grid-template-columns: 1fr; } }
 
-.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.toolbar input[type=text] {
-  padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: .88rem; font-family: inherit; min-width: 240px;
+.menu-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow .25s, transform .2s;
+  display: flex;
+  flex-direction: column;
 }
-.toolbar input[type=text]:focus { outline: none; border-color: var(--primary); }
-.btn {
-  background: var(--primary); color: #fff; border: none; padding: 9px 16px; border-radius: 10px;
-  font-size: .85rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: .15s;
+.menu-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
 }
-.btn:hover { background: var(--primary-d); }
-.btn.warn { background: #DC2626; }
-.btn.warn:hover { background: #B91C1C; }
-.btn.ghost { background: var(--bg); color: var(--text); border: 1.5px solid var(--border); }
-.btn:disabled { opacity: .55; cursor: not-allowed; }
 
-/* ── TABELA ── */
-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-thead th {
-  background: var(--primary-d); color: #fff; text-align: left; padding: 9px 10px; font-size: .74rem;
-  text-transform: uppercase; letter-spacing: .3px;
+.card-header {
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-tbody td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-tbody tr:hover { background: #F8FAFC; }
-.nome-cel .nome { font-weight: 700; color: var(--text); cursor: pointer; }
-.nome-cel .nome:hover { color: var(--primary); text-decoration: underline; }
-.nome-cel .meta { font-size: .72rem; color: var(--muted); }
-.badge-ind {
-  display: inline-block; background: rgba(0,91,142,.1); color: var(--primary);
-  font-size: .7rem; font-weight: 800; padding: 2px 9px; border-radius: 6px;
+.card-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
 }
-.badge-classe { display: inline-block; font-size: .74rem; font-weight: 800; padding: 3px 10px; border-radius: 8px; color: #fff; }
-.c-otimo { background: #198754; }
-.c-bom { background: #0284C7; }
-.c-suficiente { background: #E07B00; }
-.c-regular { background: #DC2626; }
-.acoes { display: flex; gap: 6px; }
-.acao-btn {
-  background: none; border: 1px solid var(--border); border-radius: 7px; padding: 4px 8px; cursor: pointer; font-size: .78rem;
-}
-.acao-btn:hover { background: var(--bg); }
-.vazio { text-align: center; padding: 50px 20px; color: var(--muted); }
-.vazio .ico { font-size: 2rem; margin-bottom: 8px; }
+.card-icon.blue   { background: #EBF5FC; }
+.card-icon.green  { background: #E6F7F1; }
+.card-icon.orange { background: #FFF3E0; }
+.card-icon.purple { background: #F3EFFE; }
 
-/* ── MODAL DETALHES ── */
-#detalheOverlay {
-  position: fixed; inset: 0; z-index: 900; background: rgba(15,23,42,.55);
-  display: none; align-items: center; justify-content: center; padding: 20px;
-}
-#detalheOverlay.show { display: flex; }
-.detalhe-modal {
-  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-lg);
-  padding: 26px; width: 100%; max-width: 560px; max-height: 82vh; overflow-y: auto;
-}
-.detalhe-modal h3 { font-family: 'Sora', sans-serif; font-size: 1.15rem; margin-bottom: 4px; }
-.detalhe-modal .sub { font-size: .82rem; color: var(--muted); margin-bottom: 16px; }
-.detalhe-linha { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: .84rem; }
-.detalhe-linha .k { color: var(--muted); font-weight: 600; }
-.detalhe-linha .v { text-align: right; font-weight: 600; }
-.detalhe-fecha { margin-top: 18px; width: 100%; }
+.card-title { font-family: 'Sora', sans-serif; font-size: 1rem; font-weight: 700; }
+.card-desc  { font-size: .78rem; color: var(--muted); margin-top: 2px; }
 
-/* ── CARD DE PERFIL DO PACIENTE ── */
-.perfil-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; margin-bottom: 18px; }
-.perfil-card .cabecalho { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-.perfil-card .cabecalho h4 { font-family: 'Sora', sans-serif; font-size: 1.15rem; font-weight: 800; color: var(--text); }
-.perfil-card .cabecalho .meta { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
-.perfil-card .badge-acs { background: rgba(0,91,142,.1); color: var(--primary); font-size: 0.78rem; font-weight: 700; padding: 5px 13px; border-radius: 20px; white-space: nowrap; }
-.categorias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-.categoria-bloco { border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; border-top: 4px solid var(--cor, var(--primary)); }
-.categoria-bloco .titulo { font-size: 0.88rem; font-weight: 800; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-.categoria-bloco .data-analise { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; }
-.categoria-bloco .pendencias { font-size: 0.8rem; color: var(--text); }
-.categoria-bloco .pendencias .tag { display: inline-block; background: #FEF2F2; color: #B91C1C; border-radius: 6px; padding: 2px 8px; font-size: 0.72rem; font-weight: 600; margin: 2px 3px 0 0; }
-.categoria-bloco .em-dia-txt { color: #15803D; font-weight: 700; font-size: 0.82rem; }
+/* ── LINK LIST ── */
+.link-list { padding: 10px 0; flex: 1; }
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 24px;
+  font-size: .88rem;
+  color: var(--text);
+  text-decoration: none;
+  transition: background .15s;
+  border-bottom: 1px solid #F1F5F9;
+  position: relative;
+}
+.link-item:last-child { border-bottom: none; }
+.link-item:hover { background: #F8FAFC; }
+.link-item:hover .link-arrow { opacity: 1; transform: translateX(0); }
+.link-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+.link-dot.green  { background: var(--accent); }
+.link-dot.orange { background: var(--warn); }
+.link-dot.purple { background: #7C3AED; }
+.link-label { flex: 1; font-weight: 500; }
+.link-sub { font-size: .73rem; color: var(--muted); display: block; margin-top: 1px; font-weight: 400; }
+.link-arrow {
+  font-size: .85rem;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all .15s;
+}
 
-/* ── LOGIN GATE (idêntico ao Painel do Enfermeiro) ── */
-#loginGate {
-  position: fixed; inset: 0; z-index: 999;
-  background: linear-gradient(135deg, var(--primary-d) 0%, var(--primary) 55%, #0284C7 100%);
-  display: flex; align-items: center; justify-content: center; padding: 20px;
+/* ── INFO SECTION ── */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
 }
-.login-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 40px 36px; width: 100%; max-width: 380px; }
-.login-card .lc-badge {
-  display: inline-flex; align-items: center; gap: 6px; background: rgba(0,91,142,.08); color: var(--primary);
-  border-radius: 20px; padding: 4px 14px; font-size: .72rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; margin-bottom: 14px;
+@media (max-width: 700px) { .info-grid { grid-template-columns: 1fr; } }
+
+.info-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
 }
-.login-card h2 { font-family: 'Sora', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
-.login-card p.lc-sub { color: var(--muted); font-size: .85rem; margin-bottom: 24px; }
-.lc-field { margin-bottom: 16px; }
-.lc-field label { display: block; font-size: .78rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-.lc-field input {
-  width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: .92rem; font-family: inherit; color: var(--text);
+.info-card h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: .95rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.lc-field input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,91,142,.12); }
-.lc-btn {
-  width: 100%; background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 10px;
-  font-size: .92rem; font-weight: 700; cursor: pointer; font-family: inherit;
+.tip-list { list-style: none; }
+.tip-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: .85rem;
+  color: var(--muted);
+  line-height: 1.5;
 }
-.lc-btn:hover { background: var(--primary-d); }
-.lc-btn:disabled { opacity: .6; cursor: not-allowed; }
-.lc-error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FCA5A5; border-radius: 8px; padding: 9px 12px; font-size: .8rem; margin-bottom: 16px; display: none; }
-.lc-error.show { display: block; }
+.tip-list li:last-child { border-bottom: none; }
+.tip-list li::before {
+  content: '✦';
+  color: var(--primary);
+  font-size: .65rem;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.quick-actions { display: flex; flex-direction: column; gap: 10px; }
+.qa-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  font-size: .87rem;
+  font-weight: 600;
+  transition: all .18s;
+  background: #FAFBFC;
+}
+.qa-btn:hover { border-color: var(--primary); background: var(--surface); color: var(--primary); }
+.qa-btn .qa-icon { font-size: 1.2rem; }
+.qa-btn .qa-sub { font-size: .72rem; color: var(--muted); font-weight: 400; display: block; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--primary-d);
+  color: rgba(255,255,255,.6);
+  text-align: center;
+  padding: 18px 24px;
+  font-size: .78rem;
+}
+footer strong { color: #fff; }
+footer a { color: #7DD3FC; text-decoration: none; }
 </style>
 </head>
 <body>
 
-<!-- ══════════════ GATE DE LOGIN ══════════════ -->
-<div id="loginGate">
-  <div class="login-card">
-    <div class="lc-badge">🏥 USF I — Croatá dos Martins</div>
-    <h2>Central de Dados</h2>
-    <p class="lc-sub">Entre com seu CPF e senha para continuar.</p>
-    <div class="lc-error" id="loginError"></div>
-    <form id="loginForm">
-      <div class="lc-field">
-        <label for="loginCpf">CPF</label>
-        <input type="text" id="loginCpf" inputmode="numeric" placeholder="000.000.000-00" autocomplete="username" required>
-      </div>
-      <div class="lc-field">
-        <label for="loginSenha">Senha</label>
-        <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password" required>
-      </div>
-      <button type="submit" class="lc-btn" id="loginBtn">Entrar</button>
-    </form>
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-badge">🏥 USF I — Croatá dos Martins</div>
+      <h1>Painel do<br><span>Enfermeiro</span></h1>
+      <p>Ferramentas de análise, indicadores de saúde e recursos de gestão da atenção primária em um só lugar.</p>
+
+    </div>
+    <div class="hero-cross" aria-hidden="true">✚</div>
   </div>
 </div>
 
-<!-- ══════════════ MODAL DE DETALHES ══════════════ -->
-<div id="detalheOverlay">
-  <div class="detalhe-modal">
-    <h3 id="detalheTitulo">Detalhes</h3>
-    <div class="sub" id="detalheSub"></div>
-    <div id="detalheCorpo"></div>
-    <button class="btn ghost detalhe-fecha" id="detalheFechar">Fechar</button>
+<!-- DATE BAR -->
+<div class="date-bar">
+  Bem-vindo, <strong>Enfermeiro Emerson</strong> &nbsp;·&nbsp; <span id="dateStr"></span>
+</div>
+
+<div class="main">
+
+  <!-- MENU PRINCIPAL -->
+  <div class="sec-label">Módulos</div>
+  <div class="menu-grid">
+
+    <!-- PRODUÇÃO -->
+    <div class="menu-card">
+      <div class="card-header">
+        <div class="card-icon blue">📊</div>
+        <div>
+          <div class="card-title">Produção</div>
+          <div class="card-desc">Análise mensal da equipe</div>
+        </div>
+      </div>
+      <div class="link-list">
+        <a class="link-item" href="https://emerson1993rc.github.io/Produ-o-da-equipe/analise.html" target="_blank">
+          <span class="link-dot"></span>
+          <span>
+            <span class="link-label">Análise de Produção</span>
+            <span class="link-sub">Upload CSV · Médico, Enfermeiro, ACS e mais</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Produ-o-da-equipe/ACS.html" target="_blank">
+          <span class="link-dot"></span>
+          <span>
+            <span class="link-label">Produção ACS</span>
+            <span class="link-sub">Resumo por agente comunitário</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Produ-o-da-equipe/qtdporacs.html" target="_blank">
+          <span class="link-dot"></span>
+          <span>
+            <span class="link-label">Cidadãos vinculados</span>
+            <span class="link-sub">Quantidade por agente comunitário</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/cadastro/index.html" target="_blank">
+          <span class="link-dot"></span>
+          <span>
+            <span class="link-label">Cadastro</span>
+            <span class="link-sub">Gestão de cadastros da unidade</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- INDICADORES -->
+    <div class="menu-card">
+      <div class="card-header">
+        <div class="card-icon green">📈</div>
+        <div>
+          <div class="card-title">Indicadores</div>
+          <div class="card-desc">Monitoramento de qualidade</div>
+        </div>
+      </div>
+      <div class="link-list">
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C2/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C2</span>
+            <span class="link-sub">Cuidado no desenvolvimento infantil</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C3/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C3</span>
+            <span class="link-sub">Cuidado na gestação e puerpério</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C4/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C4</span>
+            <span class="link-sub">Cuidado da pessoa com diabetes</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C5/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C5</span>
+            <span class="link-sub">Cuidado da pessoa com hipertensão</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C6/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C6</span>
+            <span class="link-sub">Cuidado da pessoa idosa</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/C7/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Indicador C7</span>
+            <span class="link-sub">Cuidado da mulher na prevenção do câncer</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Indicador_saude/triade/index.html" target="_blank">
+          <span class="link-dot green"></span>
+          <span>
+            <span class="link-label">Triade</span>
+            <span class="link-sub">Avaliando HAS,DM e +60</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- OUTRAS FERRAMENTAS -->
+    <div class="menu-card">
+      <div class="card-header">
+        <div class="card-icon orange">🛠️</div>
+        <div>
+          <div class="card-title">Outras Ferramentas</div>
+          <div class="card-desc">Rotinas e recursos complementares</div>
+        </div>
+      </div>
+      <div class="link-list">
+        <a class="link-item" href="https://emerson1993rc.github.io/Ferramentas/Rotina.html" target="_blank">
+          <span class="link-dot orange"></span>
+          <span>
+            <span class="link-label">Rotina de Trabalho</span>
+            <span class="link-sub">Organização das atividades diárias</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://indicadores-saude-varjota.vercel.app/" target="_blank">
+          <span class="link-dot orange"></span>
+          <span>
+            <span class="link-label">Indicadores Varjota</span>
+            <span class="link-sub">Painel municipal de saúde</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+ </span>
+          <span class="link-arrow">→</span>
+        </a>
+        <a class="link-item" href="https://emerson1993rc.github.io/Notifica-aps/" target="_blank">
+          <span class="link-dot orange"></span>
+          <span>
+            <span class="link-label">Notificação rapida - Anti rapica</span>
+            <span class="link-sub">Sistema de Preenchimento para Notificações Compulsórias
+Por Emerson Rodrigues — Enfermeiro de UBS</span>
+          </span>
+          <span class="link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RECURSOS RÁPIDOS -->
+  <div class="sec-label">Recursos rápidos</div>
+  <div class="info-grid">
+
+    <!-- MINISTÉRIO DA SAÚDE -->
+    <div class="info-card">
+      <h3>🏛️ Ministério da Saúde</h3>
+      <div class="quick-actions">
+        <a class="qa-btn" href="https://www.gov.br/saude/pt-br" target="_blank">
+          <span class="qa-icon">🌐</span>
+          <span>
+            Portal do Ministério da Saúde
+            <span class="qa-sub">Notícias, portarias e documentos oficiais</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://www.gov.br/saude/pt-br/composicao/svsa" target="_blank">
+          <span class="qa-icon">🔴</span>
+          <span>
+            Vigilância em Saúde e Ambiente
+            <span class="qa-sub">Secretaria de Vigilância em Saúde – SVS</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://sisab.saude.gov.br" target="_blank">
+          <span class="qa-icon">📊</span>
+          <span>
+            SISAB
+            <span class="qa-sub">Sistema de Informação em Saúde da APS</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://aps.saude.gov.br" target="_blank">
+          <span class="qa-icon">🏥</span>
+          <span>
+            APS — Atenção Primária
+            <span class="qa-sub">Notas técnicas, protocolos e indicadores</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://conass.org.br" target="_blank">
+          <span class="qa-icon">📋</span>
+          <span>
+            CONASS
+            <span class="qa-sub">Conselho Nacional de Secretários de Saúde</span>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ATALHOS RÁPIDOS -->
+    <div class="info-card">
+      <h3>⚡ Acesso rápido</h3>
+      <div class="quick-actions">
+        <a class="qa-btn" href="https://emerson1993rc.github.io/Produ-o-da-equipe/analise.html" target="_blank">
+          <span class="qa-icon">📊</span>
+          <span>
+            Abrir Análise de Produção
+            <span class="qa-sub">Upload CSV → relatório completo</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://emerson1993rc.github.io/Indicador_saude/C4/index.html" target="_blank">
+          <span class="qa-icon">📈</span>
+          <span>
+            Indicador C4 — Diabetes
+            <span class="qa-sub">Hemoglobina glicada · SISAB</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://emerson1993rc.github.io/Indicador_saude/C5/index.html" target="_blank">
+          <span class="qa-icon">🩺</span>
+          <span>
+            Indicador C5 — Hipertensão
+            <span class="qa-sub">Pressão arterial · consultas</span>
+          </span>
+        </a>
+        <a class="qa-btn" href="https://emerson1993rc.github.io/Ferramentas/Rotina.html" target="_blank">
+          <span class="qa-icon">📋</span>
+          <span>
+            Rotina de Trabalho
+            <span class="qa-sub">Agenda e atividades do dia</span>
+          </span>
+        </a>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- ══════════════ CONTEÚDO (só aparece logado) ══════════════ -->
-<div id="appContent" style="display:none;">
-
-  <div class="hero">
-    <a href="../index.html" class="voltar">← Voltar ao Painel</a>
-    <h1>📚 Central de Dados dos Pacientes</h1>
-    <p>Histórico consolidado de todas as análises enviadas pelos indicadores (C2 a C7, Tríade). Busque por nome ou CNS, ou navegue pelos filtros.</p>
-  </div>
-
-  <div id="avisoOffline" style="display:none; background:#FEF3C7; color:#92400E; padding:10px 16px; border-radius:10px; font-size:0.85rem; margin:0 0 16px; text-align:center; font-weight:600;"></div>
-
-  <div class="date-bar">
-    <span>Bem-vindo, <strong id="welcomeUserName">Enfermeiro(a)</strong></span>
-    <span class="date-bar-actions">
-      <button class="db-link" id="btnLogout" type="button">↪ Sair</button>
-    </span>
-  </div>
-
-  <div class="main" style="padding-bottom:0;">
-    <div class="filtros" style="margin-bottom:0;">
-      <button class="chip active" id="tabBtnIndicadores" onclick="mudarAba('indicadores')" style="font-size:0.9rem; padding:8px 18px;">📊 Análises dos Indicadores</button>
-      <button class="chip" id="tabBtnPerfil" onclick="mudarAba('perfil')" style="font-size:0.9rem; padding:8px 18px;">🧑‍⚕️ Perfil do Paciente</button>
-      <button class="chip" id="tabBtnTerritorio" onclick="mudarAba('territorio')" style="font-size:0.9rem; padding:8px 18px;">🏘️ Movimentação do Território</button>
-      <button class="chip" id="tabBtnVisitas" onclick="mudarAba('visitas')" style="font-size:0.9rem; padding:8px 18px;">🗓️ Visitas Sincronizadas</button>
-    </div>
-  </div>
-
-  <div class="main" id="tabIndicadores">
-    <div class="kpis" id="kpis">
-      <div class="kpi active" id="kpiTotal" onclick="setFiltroIndicador('TODOS')">
-        <div class="l">Registros</div>
-        <div class="n" id="kpiTotalN">0</div>
-      </div>
-      <div class="kpi" id="kpiPacientes">
-        <div class="l">Pacientes únicos</div>
-        <div class="n" id="kpiPacientesN">0</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="toolbar">
-        <input type="text" id="buscaTexto" placeholder="🔎 Buscar por nome ou CNS..." oninput="renderTabela()">
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn ghost" onclick="carregarDados()">🔄 Atualizar</button>
-          <button class="btn ghost" onclick="gerarPDFCentral()">📄 Baixar PDF</button>
-          <button class="btn warn" onclick="excluirTodosFiltrados()">🗑️ Excluir todos os filtrados</button>
-        </div>
-      </div>
-
-      <div class="filtros" id="filtrosIndicador">
-        <span class="grupo-label">Indicador:</span>
-        <button class="chip active" data-ind="TODOS" onclick="setFiltroIndicador('TODOS')">Todos</button>
-      </div>
-      <div class="filtros" id="filtrosClasse" style="display:none;">
-        <span class="grupo-label">Classificação:</span>
-        <button class="chip active" data-classe="TODAS" onclick="setFiltroClasse('TODAS')">Todas</button>
-      </div>
-      <div class="filtros" id="filtrosMicro"></div>
-      <div id="statusAcaoCentral" class="small" style="display:none; margin-bottom:12px; font-weight:600; color:var(--primary);"></div>
-
-      <div id="areaTabela">
-        <table>
-          <thead>
-            <tr>
-              <th style="text-align:left;">Paciente / CNS / DN / Idade</th>
-              <th>Indicador</th>
-              <th>Data análise</th>
-              <th>ACS</th>
-              <th>Classificação</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyPrincipal"></tbody>
-        </table>
-        <div class="vazio" id="vazioMsg" style="display:none;">
-          <div class="ico">🗂️</div>
-          <div>Sem nenhum dado analisado nos sistemas de indicador para esse filtro/busca.</div>
-        </div>
-      </div>
-    </div>
-  </div><!-- /#tabIndicadores -->
-
-  <div class="main" id="tabPerfil" style="display:none;">
-    <div class="card mb-3" style="margin-bottom:22px;">
-      <h3 style="font-family:'Sora',sans-serif; font-size:1.15rem; margin-bottom:4px;">🧑‍⚕️ Perfil do Paciente</h3>
-      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Digite o nome ou CNS de um paciente para ver, num só lugar, todas as categorias em que ele se encaixa (HAS, DM, Idoso, Criança, Gestante, Mulher etc.) e a pendência mais recente de cada indicador.</p>
-      <input type="text" id="buscaTextoPerfil" placeholder="🔎 Digite o nome ou CNS do paciente..." oninput="renderPerfil()" style="width:100%; padding:11px 16px; border:1.5px solid var(--border); border-radius:10px; font-size:0.95rem; font-family:inherit;">
-    </div>
-    <div id="areaPerfil"></div>
-  </div><!-- /#tabPerfil -->
-
-  <div class="main" id="tabTerritorio" style="display:none;">
-    <div class="card mb-3" style="margin-bottom:22px;">
-      <h3 style="font-family:'Sora',sans-serif; font-size:1.15rem; margin-bottom:4px;">🏘️ Movimentação do Território</h3>
-      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Compara a última lista de cidadãos enviada pelo sistema de cadastro com a lista de referência confirmada, mostrando quem entrou, quem saiu e quem mudou de área dentro da unidade.</p>
-      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-        <button class="btn" onclick="carregarTerritorio()">🔄 Atualizar comparação</button>
-        <button class="btn" style="background:#16A34A; color:#fff;" id="btnConfirmarTerritorio" onclick="confirmarReferenciaTerritorio()" disabled>✅ Confirmar esta lista como referência atual</button>
-        <span class="small" id="statusTerritorio" style="color:var(--muted);"></span>
-      </div>
-    </div>
-
-    <div id="resumoTerritorio" style="display:none;">
-      <div class="d-flex" style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:22px;">
-        <div class="card" style="flex:1; min-width:160px; text-align:center; padding:18px;">
-          <div style="font-size:1.7rem; font-weight:800; color:#16A34A;" id="kpiTerrEntrou">0</div>
-          <div class="small" style="color:var(--muted);">🟢 Entraram</div>
-        </div>
-        <div class="card" style="flex:1; min-width:160px; text-align:center; padding:18px;">
-          <div style="font-size:1.7rem; font-weight:800; color:#DC2626;" id="kpiTerrSaiu">0</div>
-          <div class="small" style="color:var(--muted);">🔴 Saíram</div>
-        </div>
-        <div class="card" style="flex:1; min-width:160px; text-align:center; padding:18px;">
-          <div style="font-size:1.7rem; font-weight:800; color:#D97706;" id="kpiTerrMudou">0</div>
-          <div class="small" style="color:var(--muted);">🔄 Mudaram de área</div>
-        </div>
-        <div class="card" style="flex:1; min-width:160px; text-align:center; padding:18px;">
-          <div style="font-size:1.7rem; font-weight:800; color:var(--primary);" id="kpiTerrReferencia">0</div>
-          <div class="small" style="color:var(--muted);">Na referência atual</div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:22px;">
-        <h3 style="font-size:1rem; margin-bottom:10px;">🟢 Entraram na área</h3>
-        <div class="table-responsive" style="overflow-x:auto;">
-          <table>
-            <thead><tr><th style="text-align:left;">Nome</th><th>Micro</th></tr></thead>
-            <tbody id="tbodyTerrEntrou"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:22px;">
-        <h3 style="font-size:1rem; margin-bottom:10px;">🔴 Saíram da área</h3>
-        <div class="table-responsive" style="overflow-x:auto;">
-          <table>
-            <thead><tr><th style="text-align:left;">Nome</th><th>Micro (última conhecida)</th></tr></thead>
-            <tbody id="tbodyTerrSaiu"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:22px;">
-        <h3 style="font-size:1rem; margin-bottom:10px;">🔄 Mudaram de área</h3>
-        <div class="table-responsive" style="overflow-x:auto;">
-          <table>
-            <thead><tr><th style="text-align:left;">Nome</th><th>De</th><th>Para</th></tr></thead>
-            <tbody id="tbodyTerrMudou"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="avisoTerritorio" class="small" style="color:var(--muted); text-align:center; padding:24px;">Clique em "Atualizar comparação" pra carregar.</div>
-
-    <div class="card" style="margin-top:8px;">
-      <h3 style="font-size:1rem; margin-bottom:10px;">📜 Histórico de confirmações</h3>
-      <div class="table-responsive" style="overflow-x:auto;">
-        <table>
-          <thead><tr><th style="text-align:left;">Nome</th><th>Tipo</th><th>De</th><th>Para</th><th>Confirmado em</th></tr></thead>
-          <tbody id="tbodyTerrHistorico"></tbody>
-        </table>
-      </div>
-    </div>
-  </div><!-- /#tabTerritorio -->
-
-  <div class="main" id="tabVisitas" style="display:none;">
-    <div class="card mb-3" style="margin-bottom:22px;">
-      <h3 style="font-family:'Sora',sans-serif; font-size:1.15rem; margin-bottom:4px;">🗓️ Visitas Sincronizadas</h3>
-      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:6px;">Calcula, pra cada paciente da Tríade (DM+HAS+Idoso), a próxima data de visita sugerida — sempre a última visita registrada + 32 dias, garantindo o mínimo de 30 dias exigido pelo indicador, com uma folga de segurança.</p>
-      <p style="color:var(--muted); font-size:0.8rem;">⚠️ A regra de ouro: nunca antecipar. Se a última visita foi dia X, a próxima só vale a partir de X + 30 dias — usamos 32 pra dar uma margem contra fins de semana e feriados.</p>
-    </div>
-
-    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;">
-      <div class="card" style="flex:1; min-width:150px; text-align:center; padding:16px;">
-        <div style="font-size:1.6rem; font-weight:800; color:#DC2626;" id="kpiVisAtrasada">0</div>
-        <div class="small" style="color:var(--muted);">🔴 Atrasadas</div>
-      </div>
-      <div class="card" style="flex:1; min-width:150px; text-align:center; padding:16px;">
-        <div style="font-size:1.6rem; font-weight:800; color:#D97706;" id="kpiVisVencendo">0</div>
-        <div class="small" style="color:var(--muted);">🟠 Vencendo em 7 dias</div>
-      </div>
-      <div class="card" style="flex:1; min-width:150px; text-align:center; padding:16px;">
-        <div style="font-size:1.6rem; font-weight:800; color:#16A34A;" id="kpiVisEmDia">0</div>
-        <div class="small" style="color:var(--muted);">🟢 Em dia</div>
-      </div>
-      <div class="card" style="flex:1; min-width:150px; text-align:center; padding:16px;">
-        <div style="font-size:1.6rem; font-weight:800; color:#64748B;" id="kpiVisSemRegistro">0</div>
-        <div class="small" style="color:var(--muted);">⚪ Sem registro</div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:16px;">
-      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
-        <span class="grupo-label">Situação:</span>
-        <button class="chip active" data-sit="TODAS" onclick="setFiltroSituacaoVisitas('TODAS')">Todas</button>
-        <button class="chip" data-sit="atrasada" onclick="setFiltroSituacaoVisitas('atrasada')">🔴 Atrasadas</button>
-        <button class="chip" data-sit="vencendo" onclick="setFiltroSituacaoVisitas('vencendo')">🟠 Vencendo</button>
-        <button class="chip" data-sit="em_dia" onclick="setFiltroSituacaoVisitas('em_dia')">🟢 Em dia</button>
-        <button class="chip" data-sit="sem_registro" onclick="setFiltroSituacaoVisitas('sem_registro')">⚪ Sem registro</button>
-      </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;" id="filtrosMicroVisitas">
-        <span class="grupo-label">ACS:</span>
-        <button class="chip active" data-micro="TODOS" onclick="setFiltroMicroVisitas('TODOS')">Todas</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="table-responsive" style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th style="text-align:left;">Paciente</th>
-              <th>ACS</th>
-              <th>Última visita</th>
-              <th>Próxima sugerida</th>
-              <th>Situação</th>
-              <th style="text-align:left;">Explicação</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyVisitas"></tbody>
-        </table>
-      </div>
-    </div>
-  </div><!-- /#tabVisitas -->
-
-</div><!-- /#appContent -->
+<!-- FOOTER -->
+<footer>
+  Desenvolvido por <strong>Emerson Rodrigues Cardoso</strong> · Enfermeiro · USF I Croatá dos Martins &nbsp;·&nbsp;
+  <a href="https://github.com/Emerson1993RC" target="_blank">GitHub</a>
+  &nbsp;·&nbsp; <span id="footerDate"></span>
+</footer>
 
 <script>
-// ═══════════════════════════════════════════════
-// CONFIGURAÇÃO SUPABASE — mesmos dados do painel de login
-// ═══════════════════════════════════════════════
-const SUPABASE_URL = 'https://pwhumwbiyarhicknrruk.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_veuLl7A8rlb7r5odrq7mOg_R2oXl_Gt';
-const DOMINIO_LOGIN = 'enfermeiro.local';
-
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// ═══════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════
-function apenasNumeros(str) { return (str || '').replace(/\D/g, ''); }
-function cpfParaEmail(cpf) { return `${apenasNumeros(cpf)}@${DOMINIO_LOGIN}`; }
-function mostrarPainel(mostrar) {
-    document.getElementById('loginGate').style.display = mostrar ? 'none' : 'flex';
-    document.getElementById('appContent').style.display = mostrar ? 'block' : 'none';
-}
-function formatarCpfInput(el) {
-    el.addEventListener('input', () => {
-        let v = apenasNumeros(el.value).slice(0, 11);
-        if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
-        else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
-        else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
-        el.value = v;
-    });
-}
-formatarCpfInput(document.getElementById('loginCpf'));
-
-function calcularIdade(dataNascISO) {
-    if (!dataNascISO) return '-';
-    const nasc = new Date(dataNascISO + 'T00:00:00');
-    const hoje = new Date();
-    let anos = hoje.getFullYear() - nasc.getFullYear();
-    let meses = hoje.getMonth() - nasc.getMonth();
-    if (hoje.getDate() < nasc.getDate()) meses--;
-    if (meses < 0) { anos--; meses += 12; }
-    if (anos > 0) return `${anos} ano${anos > 1 ? 's' : ''}${meses > 0 ? ` e ${meses}m` : ''}`;
-    return `${meses} mês${meses !== 1 ? 'es' : ''}`;
-}
-function formatBR(dataISO) {
-    if (!dataISO) return '-';
-    const [a, m, d] = dataISO.split('-');
-    return `${d}/${m}/${a}`;
-}
-function classeCss(classe) {
-    const map = { 'Ótimo': 'c-otimo', 'Bom': 'c-bom', 'Suficiente': 'c-suficiente', 'Regular': 'c-regular' };
-    return map[classe] || 'c-regular';
-}
-function humanizarChave(k) {
-    return k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
-}
-function renderValor(v) {
-    if (v === null || v === undefined || v === '') return '-';
-    if (typeof v === 'boolean') return v ? '✔️ Sim' : '❌ Não';
-    if (Array.isArray(v)) return v.length ? v.join(', ') : '-';
-    if (typeof v === 'object') {
-        return Object.entries(v).map(([k, val]) => `${humanizarChave(k)}: ${renderValor(val)}`).join(' · ');
-    }
-    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return formatBR(v);
-    return String(v);
-}
-
-// ═══════════════════════════════════════════════
-// ESTADO
-// ═══════════════════════════════════════════════
-let todosRegistros = [];
-let filtroIndicador = 'TODOS';
-let filtroClasse = 'TODAS';
-let filtroMicro = 'TODOS';
-
-let abaAtiva = 'indicadores';
-
-// ═══════════════════════════════════════════════
-// TROCA DE ABA
-// ═══════════════════════════════════════════════
-function mudarAba(aba) {
-    abaAtiva = aba;
-    document.getElementById('tabIndicadores').style.display = aba === 'indicadores' ? 'block' : 'none';
-    document.getElementById('tabPerfil').style.display = aba === 'perfil' ? 'block' : 'none';
-    document.getElementById('tabTerritorio').style.display = aba === 'territorio' ? 'block' : 'none';
-    document.getElementById('tabVisitas').style.display = aba === 'visitas' ? 'block' : 'none';
-    document.getElementById('tabBtnIndicadores').classList.toggle('active', aba === 'indicadores');
-    document.getElementById('tabBtnPerfil').classList.toggle('active', aba === 'perfil');
-    document.getElementById('tabBtnTerritorio').classList.toggle('active', aba === 'territorio');
-    document.getElementById('tabBtnVisitas').classList.toggle('active', aba === 'visitas');
-    if (aba === 'territorio' && !_territorioCarregadoUmaVez) { _territorioCarregadoUmaVez = true; carregarTerritorio(); }
-    if (aba === 'visitas') renderVisitasSincronizadas();
-}
-let _territorioCarregadoUmaVez = false;
-
-// ═══════════════════════════════════════════════
-// PERFIL DO PACIENTE — visão consolidada por categoria
-// ═══════════════════════════════════════════════
-const CATEGORIAS = {
-    'C2': { label: 'Criança (Desenvolvimento Infantil)', icone: '👶', cor: '#0284C7' },
-    'C3_GESTANTE': { label: 'Gestante', icone: '🤰', cor: '#DB2777' },
-    'C3_PUERPERIO': { label: 'Puérpera', icone: '🤱', cor: '#DB2777' },
-    'C4': { label: 'Diabetes (DM)', icone: '🩸', cor: '#DC2626' },
-    'C5': { label: 'Hipertensão (HAS)', icone: '❤️', cor: '#DC2626' },
-    'C6': { label: 'Pessoa Idosa', icone: '👴', cor: '#7C3AED' },
-    'C7': { label: 'Mulher (Prevenção do Câncer)', icone: '♀️', cor: '#DB2777' },
-    'TRIADE': { label: 'Tríade (DM+HAS+Idoso)', icone: '🩺', cor: '#2C3E78' },
-    'CADASTRO': { label: 'Situação Cadastral', icone: '📋', cor: '#64748B' },
-};
-
-function extrairPendencias(dados) {
-    if (!dados) return [];
-    if (Array.isArray(dados.pendencias)) return dados.pendencias;
-    if (dados.pendencias && typeof dados.pendencias === 'object') {
-        return Object.entries(dados.pendencias)
-            .filter(([, v]) => v === false || (Array.isArray(v) && v.length))
-            .map(([k]) => humanizarChave(k));
-    }
-    return [];
-}
-
-function renderPerfil() {
-    const area = document.getElementById('areaPerfil');
-    const busca = (document.getElementById('buscaTextoPerfil').value || '').trim().toUpperCase();
-
-    if (!busca) {
-        area.innerHTML = `<div class="vazio"><div class="ico">🔎</div><div>Digite um nome ou CNS acima para ver o perfil consolidado do paciente.</div></div>`;
-        return;
-    }
-
-    const encontrados = todosRegistros.filter(r => {
-        const p = r.pacientes || {};
-        return (p.nome || '').toUpperCase().includes(busca) || (p.cns || '').includes(busca);
-    });
-
-    if (!encontrados.length) {
-        area.innerHTML = `<div class="vazio"><div class="ico">🗂️</div><div>Sem nenhum dado analisado nos sistemas de indicador para esse nome/CNS.</div></div>`;
-        return;
-    }
-
-    // agrupa por paciente
-    const grupos = {};
-    encontrados.forEach(r => {
-        const pid = r.paciente_id;
-        if (!grupos[pid]) grupos[pid] = { paciente: r.pacientes, registros: [] };
-        grupos[pid].registros.push(r);
-    });
-
-    area.innerHTML = Object.values(grupos).map(g => {
-        const p = g.paciente || {};
-
-        // mantém só o mais recente de cada indicador
-        const maisRecentePorIndicador = {};
-        g.registros.forEach(r => {
-            const atual = maisRecentePorIndicador[r.indicador];
-            if (!atual || r.data_analise > atual.data_analise) maisRecentePorIndicador[r.indicador] = r;
-        });
-
-        const blocos = Object.values(maisRecentePorIndicador).map(r => {
-            const cat = CATEGORIAS[r.indicador] || { label: r.indicador, icone: '📄', cor: '#64748B' };
-            const pendencias = extrairPendencias(r.dados);
-            return `
-                <div class="categoria-bloco" style="--cor:${cat.cor};">
-                    <div class="titulo">${cat.icone} ${cat.label}</div>
-                    <div class="data-analise">Última análise: ${formatBR(r.data_analise)}${r.classificacao ? ` · ${r.pontuacao != null ? r.pontuacao + ' · ' : ''}${r.classificacao}` : ''}</div>
-                    <div class="pendencias">
-                        ${pendencias.length ? pendencias.map(pd => `<span class="tag">${pd}</span>`).join('') : `<span class="em-dia-txt">✔️ Sem pendências registradas</span>`}
-                    </div>
-                </div>`;
-        }).join('');
-
-        return `
-            <div class="perfil-card">
-                <div class="cabecalho">
-                    <div>
-                        <h4>${p.nome || '(sem nome)'}</h4>
-                        <div class="meta">CNS: ${p.cns || '-'} · DN: ${formatBR(p.data_nascimento)} · ${calcularIdade(p.data_nascimento)}</div>
-                    </div>
-                    <span class="badge-acs">${nomeAcs(g.registros[0].microarea)}</span>
-                </div>
-                <div class="categorias-grid">${blocos}</div>
-            </div>`;
-    }).join('');
-}
-
-// ═══════════════════════════════════════════════
-// CACHE OFFLINE (IndexedDB) — guarda automaticamente a última
-// foto bem-sucedida dos dados, pra Central abrir mesmo sem internet
-// ═══════════════════════════════════════════════
-const DB_NAME_CACHE = 'central_aps_cache';
-const STORE_CACHE = 'snapshot';
-
-function abrirDBCache() {
-    return new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME_CACHE, 1);
-        req.onupgradeneeded = () => req.result.createObjectStore(STORE_CACHE);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-    });
-}
-async function salvarCacheOffline(registros) {
-    try {
-        const db = await abrirDBCache();
-        const tx = db.transaction(STORE_CACHE, 'readwrite');
-        tx.objectStore(STORE_CACHE).put({ registros, salvoEm: new Date().toISOString() }, 'ultima_foto');
-        await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); });
-    } catch (e) { console.warn('Não foi possível salvar o cache offline:', e); }
-}
-async function carregarCacheOffline() {
-    try {
-        const db = await abrirDBCache();
-        const tx = db.transaction(STORE_CACHE, 'readonly');
-        const req = tx.objectStore(STORE_CACHE).get('ultima_foto');
-        return await new Promise((resolve, reject) => {
-            req.onsuccess = () => resolve(req.result || null);
-            req.onerror = () => reject(req.error);
-        });
-    } catch (e) { console.warn('Não foi possível ler o cache offline:', e); return null; }
-}
-function mostrarAvisoOffline(salvoEmISO) {
-    const banner = document.getElementById('avisoOffline');
-    const d = new Date(salvoEmISO);
-    const p = n => String(n).padStart(2, '0');
-    banner.textContent = `📵 Sem internet — mostrando dados salvos em ${p(d.getDate())}/${p(d.getMonth() + 1)} às ${p(d.getHours())}:${p(d.getMinutes())}`;
-    banner.style.display = 'block';
-}
-function esconderAvisoOffline() {
-    document.getElementById('avisoOffline').style.display = 'none';
-}
-
-// ═══════════════════════════════════════════════
-// CARREGAR DADOS DO SUPABASE
-
-// ═══════════════════════════════════════════════
-async function carregarDados() {
-    document.getElementById('tbodyPrincipal').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">Carregando...</td></tr>';
-
-    // O Supabase nunca devolve mais de 1000 linhas por requisição, não importa o .limit() pedido.
-    // Por isso buscamos em "páginas" de 1000, juntando tudo até a última página vir incompleta.
-    const TAMANHO_PAGINA = 1000;
-    let todos = [];
-    let desde = 0;
-    let paginaErro = null;
-
-    try {
-        while (true) {
-            const { data, error } = await sb
-                .from('indicador_snapshots')
-                .select('*, pacientes(id,nome,cns,data_nascimento)')
-                .order('data_analise', { ascending: false })
-                .range(desde, desde + TAMANHO_PAGINA - 1);
-
-            if (error) { paginaErro = error; break; }
-            todos = todos.concat(data || []);
-            if (!data || data.length < TAMANHO_PAGINA) break;
-            desde += TAMANHO_PAGINA;
-        }
-    } catch (e) {
-        paginaErro = e;
-    }
-
-    if (paginaErro) {
-        // Sem rede (ou erro real) — cai pra última foto salva localmente, se existir
-        const cache = await carregarCacheOffline();
-        if (cache && cache.registros && cache.registros.length) {
-            todosRegistros = cache.registros;
-            mostrarAvisoOffline(cache.salvoEm);
-            montarFiltrosDinamicos();
-            atualizarKPIs();
-            renderTabela();
-            renderPerfil();
-            renderVisitasSincronizadas();
-            return;
-        }
-        document.getElementById('tbodyPrincipal').innerHTML = `<tr><td colspan="6" style="color:#DC2626; padding:16px;">Erro ao carregar: ${paginaErro.message || 'sem conexão e sem dados salvos localmente ainda'}</td></tr>`;
-        return;
-    }
-
-    todosRegistros = todos;
-    esconderAvisoOffline();
-    salvarCacheOffline(todos); // guarda a foto em segundo plano, não bloqueia a tela
-    montarFiltrosDinamicos();
-    atualizarKPIs();
-    renderTabela();
-    renderPerfil();
-    renderVisitasSincronizadas();
-}
-
-function normalizarMicro(v) {
-    if (v === null || v === undefined) return null;
-    const s = String(v).trim();
-    if (!s) return null;
-    return /^\d+$/.test(s) ? String(parseInt(s, 10)).padStart(2, '0') : s;
-}
-
-const MAPA_ACS = {
-    "05": "Rosangela", "06": "Nova", "12": "Sergio", "13": "Iana", "14": "Naiara", "15": "Isabel",
-};
-function nomeAcs(micro) {
-    const norm = normalizarMicro(micro);
-    if (!norm) return 'Não informada';
-    return MAPA_ACS[norm] || `Micro ${norm}`;
-}
-
-function montarFiltrosDinamicos() {
-    // indicadores
-    const indicadores = [...new Set(todosRegistros.map(r => r.indicador))].sort();
-    const grupoInd = document.getElementById('filtrosIndicador');
-    grupoInd.querySelectorAll('[data-ind]:not([data-ind="TODOS"])').forEach(b => b.remove());
-    indicadores.forEach(ind => {
-        const btn = document.createElement('button');
-        btn.className = 'chip';
-        btn.dataset.ind = ind;
-        btn.textContent = ind;
-        btn.onclick = () => setFiltroIndicador(ind);
-        grupoInd.appendChild(btn);
-    });
-
-    // microáreas
-    const micros = [...new Set(todosRegistros.map(r => normalizarMicro(r.microarea)).filter(Boolean))].sort((a, b) => {
-        const na = parseFloat(a), nb = parseFloat(b);
-        if (!isNaN(na) && !isNaN(nb)) return na - nb;
-        return a.localeCompare(b);
-    });
-    const grupoMicro = document.getElementById('filtrosMicro');
-    grupoMicro.innerHTML = '';
-    if (micros.length) {
-        const label = document.createElement('span');
-        label.className = 'grupo-label';
-        label.textContent = 'ACS:';
-        grupoMicro.appendChild(label);
-        const btnTodas = document.createElement('button');
-        btnTodas.className = 'chip active';
-        btnTodas.dataset.micro = 'TODOS';
-        btnTodas.textContent = 'Todas';
-        btnTodas.onclick = () => setFiltroMicro('TODOS');
-        grupoMicro.appendChild(btnTodas);
-        micros.forEach(m => {
-            const btn = document.createElement('button');
-            btn.className = 'chip';
-            btn.dataset.micro = m;
-            btn.textContent = nomeAcs(m);
-            btn.onclick = () => setFiltroMicro(m);
-            grupoMicro.appendChild(btn);
-        });
-    }
-
-    // classificação: reconstrói dinamicamente com base no indicador selecionado
-    atualizarFiltrosClasse();
-}
-
-function atualizarFiltrosClasse() {
-    const base = filtroIndicador === 'TODOS'
-        ? todosRegistros
-        : todosRegistros.filter(r => r.indicador === filtroIndicador);
-
-    const classes = [...new Set(base.map(r => r.classificacao).filter(Boolean))];
-
-    const grupoClasse = document.getElementById('filtrosClasse');
-    grupoClasse.querySelectorAll('[data-classe]:not([data-classe="TODAS"])').forEach(b => b.remove());
-    filtroClasse = 'TODAS';
-    document.querySelectorAll('#filtrosClasse .chip').forEach(b => b.classList.toggle('active', b.dataset.classe === 'TODAS'));
-
-    classes.forEach(c => {
-        const btn = document.createElement('button');
-        btn.className = 'chip';
-        btn.dataset.classe = c;
-        btn.textContent = c;
-        btn.onclick = () => setFiltroClasse(c);
-        grupoClasse.appendChild(btn);
-    });
-
-    grupoClasse.style.display = classes.length ? 'flex' : 'none';
-}
-
-function atualizarKPIs() {
-    document.getElementById('kpiTotalN').textContent = todosRegistros.length;
-    const pacientesUnicos = new Set(todosRegistros.map(r => r.paciente_id)).size;
-    document.getElementById('kpiPacientesN').textContent = pacientesUnicos;
-}
-
-// ═══════════════════════════════════════════════
-// FILTROS
-// ═══════════════════════════════════════════════
-function setFiltroIndicador(ind) {
-    filtroIndicador = ind;
-    document.querySelectorAll('#filtrosIndicador .chip').forEach(b => b.classList.toggle('active', b.dataset.ind === ind));
-    atualizarFiltrosClasse();
-    renderTabela();
-}
-function setFiltroClasse(c) {
-    filtroClasse = c;
-    document.querySelectorAll('#filtrosClasse .chip').forEach(b => b.classList.toggle('active', b.dataset.classe === c));
-    renderTabela();
-}
-function setFiltroMicro(m) {
-    filtroMicro = m;
-    document.querySelectorAll('#filtrosMicro .chip').forEach(b => b.classList.toggle('active', b.dataset.micro === m));
-    renderTabela();
-}
-
-function listaFiltrada() {
-    let lista = todosRegistros.slice();
-    if (filtroIndicador !== 'TODOS') lista = lista.filter(r => r.indicador === filtroIndicador);
-    if (filtroClasse !== 'TODAS') lista = lista.filter(r => r.classificacao === filtroClasse);
-    if (filtroMicro !== 'TODOS') lista = lista.filter(r => normalizarMicro(r.microarea) === filtroMicro);
-    const busca = (document.getElementById('buscaTexto').value || '').trim().toUpperCase();
-    if (busca) {
-        lista = lista.filter(r => {
-            const p = r.pacientes || {};
-            return (p.nome || '').toUpperCase().includes(busca) || (p.cns || '').includes(busca);
-        });
-    }
-    return lista;
-}
-
-// ═══════════════════════════════════════════════
-// RENDER DA TABELA
-// ═══════════════════════════════════════════════
-function renderTabela() {
-    const lista = listaFiltrada();
-    const tbody = document.getElementById('tbodyPrincipal');
-    const vazio = document.getElementById('vazioMsg');
-    tbody.innerHTML = '';
-
-    if (!lista.length) {
-        vazio.style.display = 'block';
-        return;
-    }
-    vazio.style.display = 'none';
-
-    lista.forEach(r => {
-        const p = r.pacientes || {};
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="nome-cel">
-                <div class="nome" onclick="buscarPorNome('${(p.nome || '').replace(/'/g, "\\'")}')">${p.nome || '(sem nome)'}</div>
-                <div class="meta">CNS: ${p.cns || '-'} · DN: ${formatBR(p.data_nascimento)} · ${calcularIdade(p.data_nascimento)}</div>
-            </td>
-            <td class="text-center"><span class="badge-ind">${r.indicador}</span></td>
-            <td class="text-center">${formatBR(r.data_analise)}</td>
-            <td class="text-center">${nomeAcs(r.microarea)}</td>
-            <td class="text-center">${r.classificacao ? `<span class="badge-classe ${classeCss(r.classificacao)}">${r.pontuacao != null ? r.pontuacao + ' · ' : ''}${r.classificacao}</span>` : '-'}</td>
-            <td class="acoes">
-                <button class="acao-btn" onclick="verDetalhes('${r.id}')" title="Ver detalhes">👁️</button>
-                <button class="acao-btn" onclick="excluirSnapshot('${r.id}')" title="Excluir esta análise">🗑️</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-function buscarPorNome(nome) {
-    document.getElementById('buscaTexto').value = nome;
-    renderTabela();
-}
-
-// ═══════════════════════════════════════════════
-// MODAL DE DETALHES
-// ═══════════════════════════════════════════════
-function verDetalhes(id) {
-    const r = todosRegistros.find(x => x.id === id);
-    if (!r) return;
-    const p = r.pacientes || {};
-    document.getElementById('detalheTitulo').textContent = p.nome || '(sem nome)';
-    document.getElementById('detalheSub').textContent =
-        `CNS: ${p.cns || '-'} · DN: ${formatBR(p.data_nascimento)} · Indicador ${r.indicador} · Análise de ${formatBR(r.data_analise)}`;
-
-    const corpo = document.getElementById('detalheCorpo');
-    corpo.innerHTML = '';
-    const linhaTop = document.createElement('div');
-    linhaTop.className = 'detalhe-linha';
-    linhaTop.innerHTML = `<span class="k">Pontuação / Classificação</span><span class="v">${r.pontuacao != null ? r.pontuacao : '-'} ${r.classificacao ? '· ' + r.classificacao : ''}</span>`;
-    corpo.appendChild(linhaTop);
-
-    const dados = r.dados || {};
-    Object.entries(dados).forEach(([k, v]) => {
-        const linha = document.createElement('div');
-        linha.className = 'detalhe-linha';
-        linha.innerHTML = `<span class="k">${humanizarChave(k)}</span><span class="v">${renderValor(v)}</span>`;
-        corpo.appendChild(linha);
-    });
-
-    document.getElementById('detalheOverlay').classList.add('show');
-}
-document.getElementById('detalheFechar').addEventListener('click', () => {
-    document.getElementById('detalheOverlay').classList.remove('show');
-});
-
-// ═══════════════════════════════════════════════
-// EXCLUIR
-// ═══════════════════════════════════════════════
-async function excluirSnapshot(id) {
-    const r = todosRegistros.find(x => x.id === id);
-    if (!r) return;
-    const p = r.pacientes || {};
-    if (!confirm(`Excluir a análise de ${r.indicador} de ${formatBR(r.data_analise)} para "${p.nome}"?\n\nEssa ação não pode ser desfeita.`)) return;
-
-    const { error } = await sb.from('indicador_snapshots').delete().eq('id', id);
-    if (error) { alert('Erro ao excluir: ' + error.message); return; }
-
-    todosRegistros = todosRegistros.filter(x => x.id !== id);
-    atualizarKPIs();
-    renderTabela();
-}
-
-// ═══════════════════════════════════════════════
-// EXCLUIR EM MASSA (respeita os filtros ativos)
-// ═══════════════════════════════════════════════
-async function excluirTodosFiltrados() {
-    const lista = listaFiltrada();
-    if (!lista.length) {
-        alert('Não há registros na lista filtrada atual para excluir.');
-        return;
-    }
-
-    const descricaoFiltro = [
-        filtroIndicador !== 'TODOS' ? `Indicador: ${filtroIndicador}` : null,
-        filtroClasse !== 'TODAS' ? `Classificação: ${filtroClasse}` : null,
-        filtroMicro !== 'TODOS' ? `Micro: ${filtroMicro}` : null,
-        (document.getElementById('buscaTexto').value || '').trim() ? `Busca: "${document.getElementById('buscaTexto').value.trim()}"` : null,
-    ].filter(Boolean).join(' · ') || 'Todos os registros (sem filtro)';
-
-    const digitado = prompt(
-        `Isso vai excluir PERMANENTEMENTE ${lista.length} análise(s) do banco de dados.\n\n` +
-        `Filtro atual: ${descricaoFiltro}\n\n` +
-        `Isso apaga somente as análises (indicador_snapshots) — os cadastros dos pacientes continuam intactos, ` +
-        `podendo receber novas análises depois.\n\n` +
-        `Para confirmar, digite EXCLUIR (em maiúsculas) abaixo:`
-    );
-    if (digitado !== 'EXCLUIR') {
-        if (digitado !== null) alert('Confirmação incorreta. Nada foi excluído.');
-        return;
-    }
-
-    const status = document.getElementById('statusAcaoCentral');
-    status.style.display = 'block';
-    status.textContent = `Excluindo 0/${lista.length}...`;
-
-    const ids = lista.map(r => r.id);
-    // exclui em lotes de 100 para não estourar o tamanho da requisição
-    let excluidos = 0, falhas = 0;
-    for (let i = 0; i < ids.length; i += 100) {
-        const lote = ids.slice(i, i + 100);
-        const { error } = await sb.from('indicador_snapshots').delete().in('id', lote);
-        if (error) { falhas += lote.length; console.error(error); }
-        else excluidos += lote.length;
-        status.textContent = `Excluindo ${Math.min(i + 100, ids.length)}/${ids.length}...`;
-    }
-
-    const idsExcluidosSet = new Set(ids);
-    todosRegistros = todosRegistros.filter(r => !idsExcluidosSet.has(r.id));
-    atualizarKPIs();
-    montarFiltrosDinamicos();
-    renderTabela();
-
-    status.textContent = `✅ ${excluidos} análise(s) excluída(s)${falhas ? `, ${falhas} com erro` : ''}.`;
-    setTimeout(() => { status.style.display = 'none'; }, 6000);
-}
-
-// ═══════════════════════════════════════════════
-// GERAR PDF (respeita os filtros/busca ativos)
-// ═══════════════════════════════════════════════
-function gerarPDFCentral() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const lista = listaFiltrada();
-
-    doc.setFontSize(13);
-    doc.setTextColor(0, 91, 142);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CENTRAL DE DADOS — HISTÓRICO DE PACIENTES', 14, 12);
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.setFont('helvetica', 'normal');
-    const filtroTxt = `Indicador: ${filtroIndicador} · Classificação: ${filtroClasse} · Micro: ${filtroMicro}`;
-    doc.text(`${filtroTxt}  |  Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 18);
-
-    const body = lista.map((r, idx) => {
-        const p = r.pacientes || {};
-        return [
-            idx + 1,
-            p.nome || '(sem nome)',
-            p.cns || '-',
-            formatBR(p.data_nascimento),
-            calcularIdade(p.data_nascimento),
-            r.indicador,
-            formatBR(r.data_analise),
-            nomeAcs(r.microarea),
-            r.classificacao ? `${r.pontuacao != null ? r.pontuacao + ' - ' : ''}${r.classificacao}` : '-',
-        ];
-    });
-
-    doc.autoTable({
-        startY: 24,
-        head: [['#', 'Nome', 'CNS', 'DN', 'Idade', 'Indicador', 'Data análise', 'ACS', 'Classificação']],
-        body,
-        styles: { fontSize: 6.5, cellPadding: 1.5 },
-        headStyles: { fillColor: [0, 63, 99], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
-        alternateRowStyles: { fillColor: [240, 245, 255] },
-        margin: { left: 7, right: 7 },
-    });
-
-    const pages = doc.internal.getNumberOfPages();
-    for (let p = 1; p <= pages; p++) {
-        doc.setPage(p);
-        doc.setTextColor(150, 150, 150);
-        doc.setFontSize(7);
-        doc.text(`Página ${p} de ${pages}`, 283, 205, { align: 'right' });
-    }
-
-    doc.save(`Central_Dados_${new Date().toISOString().slice(0, 10)}.pdf`);
-}
-
-// ═══════════════════════════════════════════════
-// AUTENTICAÇÃO
-// ═══════════════════════════════════════════════
-async function carregarPerfilEAbrir(userId) {
-    const { data: perfil, error } = await sb.from('profiles').select('nome_completo').eq('id', userId).single();
-    document.getElementById('welcomeUserName').textContent =
-        (!error && perfil && perfil.nome_completo) ? perfil.nome_completo : 'Enfermeiro(a)';
-    mostrarPainel(true);
-    carregarDados();
-}
-
-(async function iniciar() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) { await carregarPerfilEAbrir(session.user.id); }
-    else { mostrarPainel(false); }
-})();
-
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const cpf = document.getElementById('loginCpf').value;
-    const senha = document.getElementById('loginSenha').value;
-    const btn = document.getElementById('loginBtn');
-    const errBox = document.getElementById('loginError');
-    errBox.classList.remove('show');
-
-    if (apenasNumeros(cpf).length !== 11) {
-        errBox.textContent = 'Digite um CPF válido (11 dígitos).';
-        errBox.classList.add('show');
-        return;
-    }
-    btn.disabled = true; btn.textContent = 'Entrando...';
-    const { data, error } = await sb.auth.signInWithPassword({ email: cpfParaEmail(cpf), password: senha });
-    btn.disabled = false; btn.textContent = 'Entrar';
-
-    if (error) {
-        errBox.textContent = 'CPF ou senha incorretos.';
-        errBox.classList.add('show');
-        return;
-    }
-    document.getElementById('loginSenha').value = '';
-    await carregarPerfilEAbrir(data.user.id);
-});
-
-document.getElementById('btnLogout').addEventListener('click', async () => {
-    await sb.auth.signOut();
-    mostrarPainel(false);
-});
-
-// ── Logout automático por inatividade (5 minutos) — mesmo padrão do painel principal ──
-const TEMPO_INATIVIDADE_MS = 5 * 60 * 1000;
-let timerInatividade = null;
-function reiniciarTimerInatividade() {
-    if (document.getElementById('appContent').style.display === 'none') return;
-    clearTimeout(timerInatividade);
-    timerInatividade = setTimeout(async () => {
-        await sb.auth.signOut();
-        mostrarPainel(false);
-        const errBox = document.getElementById('loginError');
-        errBox.textContent = 'Sessão encerrada por inatividade. Faça login novamente.';
-        errBox.classList.add('show');
-    }, TEMPO_INATIVIDADE_MS);
-}
-['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evento => {
-    document.addEventListener(evento, reiniciarTimerInatividade, { passive: true });
-});
-
-// ═══════════════════════════════════════════════
-// MOVIMENTAÇÃO DO TERRITÓRIO — compara a lista candidata (enviada pelo
-// cadastro) com a referência confirmada: quem entrou, quem saiu, quem
-// mudou de área. Ao confirmar, a candidata vira a nova referência e o
-// histórico de movimentações é gravado.
-// ═══════════════════════════════════════════════
-let _ultimaComparacaoTerritorio = null; // guarda o resultado calculado, pra usar no confirmar sem refazer a consulta
-
-async function carregarTerritorio() {
-    const status = document.getElementById('statusTerritorio');
-    const aviso = document.getElementById('avisoTerritorio');
-    const resumo = document.getElementById('resumoTerritorio');
-    const btnConfirmar = document.getElementById('btnConfirmarTerritorio');
-
-    status.textContent = 'Carregando...';
-    btnConfirmar.disabled = true;
-    resumo.style.display = 'none';
-    aviso.style.display = 'block';
-    aviso.textContent = 'Carregando...';
-
-    const [refResp, candResp, histResp] = await Promise.all([
-        sb.from('territorio_referencia').select('chave_dedup,nome,cns,micro'),
-        sb.from('territorio_candidata').select('chave_dedup,nome,cns,micro'),
-        sb.from('territorio_movimentacoes').select('nome,tipo,micro_antiga,micro_nova,confirmado_em').order('confirmado_em', { ascending: false }).limit(100),
-    ]);
-
-    if (refResp.error || candResp.error) {
-        status.textContent = '';
-        aviso.textContent = '❌ Erro ao carregar: ' + (refResp.error?.message || candResp.error?.message);
-        return;
-    }
-
-    const referencia = refResp.data || [];
-    const candidata = candResp.data || [];
-    const historico = histResp.data || [];
-
-    if (!candidata.length) {
-        status.textContent = '';
-        aviso.style.display = 'block';
-        aviso.textContent = 'Ainda não há nenhuma lista candidata enviada pelo sistema de cadastro. Envie pelo botão "🏘️ Enviar lista pro território" no cadastro primeiro.';
-        renderHistoricoTerritorio(historico);
-        return;
-    }
-
-    const mapaRef = new Map(referencia.map(p => [p.chave_dedup, p]));
-    const mapaCand = new Map(candidata.map(p => [p.chave_dedup, p]));
-
-    const entraram = [], sairam = [], mudaram = [];
-    mapaCand.forEach((p, chave) => {
-        if (!mapaRef.has(chave)) { entraram.push(p); return; }
-        const antigo = mapaRef.get(chave);
-        if ((antigo.micro || '') !== (p.micro || '')) mudaram.push({ nome: p.nome, de: antigo.micro, para: p.micro });
-    });
-    mapaRef.forEach((p, chave) => { if (!mapaCand.has(chave)) sairam.push(p); });
-
-    entraram.sort((a, b) => a.nome.localeCompare(b.nome));
-    sairam.sort((a, b) => a.nome.localeCompare(b.nome));
-    mudaram.sort((a, b) => a.nome.localeCompare(b.nome));
-
-    _ultimaComparacaoTerritorio = { entraram, sairam, mudaram, candidata };
-
-    document.getElementById('kpiTerrEntrou').textContent = entraram.length;
-    document.getElementById('kpiTerrSaiu').textContent = sairam.length;
-    document.getElementById('kpiTerrMudou').textContent = mudaram.length;
-    document.getElementById('kpiTerrReferencia').textContent = referencia.length;
-
-    document.getElementById('tbodyTerrEntrou').innerHTML = entraram.length
-        ? entraram.map(p => `<tr><td>${p.nome}</td><td class="text-center">${nomeAcs(p.micro)}</td></tr>`).join('')
-        : '<tr><td colspan="2" style="text-align:center; color:var(--muted);">Ninguém novo desde a última referência.</td></tr>';
-
-    document.getElementById('tbodyTerrSaiu').innerHTML = sairam.length
-        ? sairam.map(p => `<tr><td>${p.nome}</td><td class="text-center">${nomeAcs(p.micro)}</td></tr>`).join('')
-        : '<tr><td colspan="2" style="text-align:center; color:var(--muted);">Ninguém saiu desde a última referência.</td></tr>';
-
-    document.getElementById('tbodyTerrMudou').innerHTML = mudaram.length
-        ? mudaram.map(m => `<tr><td>${m.nome}</td><td class="text-center">${nomeAcs(m.de)}</td><td class="text-center">${nomeAcs(m.para)}</td></tr>`).join('')
-        : '<tr><td colspan="3" style="text-align:center; color:var(--muted);">Ninguém mudou de área desde a última referência.</td></tr>';
-
-    renderHistoricoTerritorio(historico);
-
-    aviso.style.display = 'none';
-    resumo.style.display = 'block';
-    const semMudanca = !entraram.length && !sairam.length && !mudaram.length;
-    status.textContent = semMudanca ? '✅ Candidata idêntica à referência — nada pra confirmar.' : `${entraram.length + sairam.length + mudaram.length} mudança(s) encontrada(s).`;
-    btnConfirmar.disabled = semMudanca;
-}
-
-function renderHistoricoTerritorio(historico) {
-    const labelTipo = { entrou: '🟢 Entrou', saiu: '🔴 Saiu', mudou_area: '🔄 Mudou de área' };
-    document.getElementById('tbodyTerrHistorico').innerHTML = historico.length
-        ? historico.map(h => {
-            const d = new Date(h.confirmado_em);
-            const p = n => String(n).padStart(2, '0');
-            const dataFmt = `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
-            return `<tr><td>${h.nome}</td><td>${labelTipo[h.tipo] || h.tipo}</td><td class="text-center">${h.micro_antiga ? nomeAcs(h.micro_antiga) : '-'}</td><td class="text-center">${h.micro_nova ? nomeAcs(h.micro_nova) : '-'}</td><td class="text-center">${dataFmt}</td></tr>`;
-        }).join('')
-        : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">Nenhuma confirmação registrada ainda.</td></tr>';
-}
-
-async function confirmarReferenciaTerritorio() {
-    if (!_ultimaComparacaoTerritorio) return;
-    const { entraram, sairam, mudaram, candidata } = _ultimaComparacaoTerritorio;
-    const total = entraram.length + sairam.length + mudaram.length;
-    if (!confirm(`Confirmar esta lista como nova referência? Isso registra ${total} movimentação(ões) no histórico e substitui a referência anterior.`)) return;
-
-    const btn = document.getElementById('btnConfirmarTerritorio');
-    const status = document.getElementById('statusTerritorio');
-    btn.disabled = true;
-    status.textContent = 'Registrando movimentações...';
-
-    const registros = [
-        ...entraram.map(p => ({ tipo: 'entrou', nome: p.nome, cns: p.cns, micro_antiga: null, micro_nova: p.micro })),
-        ...sairam.map(p => ({ tipo: 'saiu', nome: p.nome, cns: p.cns, micro_antiga: p.micro, micro_nova: null })),
-        ...mudaram.map(m => ({ tipo: 'mudou_area', nome: m.nome, cns: null, micro_antiga: m.de, micro_nova: m.para })),
-    ];
-
-    if (registros.length) {
-        const { error: errHist } = await sb.from('territorio_movimentacoes').insert(registros);
-        if (errHist) {
-            console.error('Erro ao gravar histórico:', errHist);
-            status.textContent = '❌ Erro ao gravar o histórico (veja o console). Referência não foi atualizada.';
-            btn.disabled = false;
-            return;
-        }
-    }
-
-    status.textContent = 'Atualizando referência...';
-    const { error: errDel } = await sb.from('territorio_referencia').delete().neq('chave_dedup', '__nunca__');
-    if (errDel) {
-        console.error('Erro ao limpar referência anterior:', errDel);
-        status.textContent = '❌ Erro ao limpar a referência anterior (veja o console). Histórico já foi gravado.';
-        btn.disabled = false;
-        return;
-    }
-
-    const TAM_LOTE_TERR = 300;
-    for (let i = 0; i < candidata.length; i += TAM_LOTE_TERR) {
-        const lote = candidata.slice(i, i + TAM_LOTE_TERR).map(p => ({ chave_dedup: p.chave_dedup, nome: p.nome, cns: p.cns, micro: p.micro }));
-        const { error } = await sb.from('territorio_referencia').upsert(lote, { onConflict: 'chave_dedup' });
-        if (error) console.error('Erro no lote de referência:', error);
-    }
-
-    status.textContent = '✅ Referência atualizada e histórico registrado.';
-    btn.disabled = true;
-    carregarTerritorio();
-}
-
-// ═══════════════════════════════════════════════
-// VISITAS SINCRONIZADAS — pra cada paciente da Tríade, calcula a próxima
-// data de visita sugerida (última visita + 32 dias, com folga sobre o
-// mínimo de 30 exigido pelo indicador). Reaproveita os dados já
-// carregados em todosRegistros, sem precisar de consulta nova.
-// ═══════════════════════════════════════════════
-const INTERVALO_SUGERIDO_VISITA = 32;
-const JANELA_VENCENDO_VISITA = 7;
-let filtroMicroVisitas = 'TODOS';
-let filtroSituacaoVisitas = 'TODAS';
-
-function parseDataBR(str) {
-    if (!str) return null;
-    const m = String(str).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    if (!m) return null;
-    return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
-}
-function formatDataObj(d) {
-    if (!d) return '-';
-    const p = n => String(n).padStart(2, '0');
-    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
-}
-
-function calcularVisitasSincronizadas() {
-    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    const maisRecentePorPaciente = {};
-    todosRegistros.filter(r => r.indicador === 'TRIADE').forEach(r => {
-        const pid = r.paciente_id;
-        if (!maisRecentePorPaciente[pid] || r.data_analise > maisRecentePorPaciente[pid].data_analise) {
-            maisRecentePorPaciente[pid] = r;
-        }
-    });
-
-    return Object.values(maisRecentePorPaciente).map(r => {
-        const p = r.pacientes || {};
-        const dados = r.dados || {};
-        const ultimaVisita = parseDataBR(dados.visitaData2) || parseDataBR(dados.visitaData1);
-
-        if (!ultimaVisita) {
-            return { nome: p.nome, micro: r.microarea, ultimaVisita: null, sugerida: null, situacao: 'sem_registro', dias: null };
-        }
-
-        const sugerida = new Date(ultimaVisita);
-        sugerida.setDate(sugerida.getDate() + INTERVALO_SUGERIDO_VISITA);
-        const diffDias = Math.round((sugerida - hoje) / 86400000);
-
-        let situacao;
-        if (diffDias < 0) situacao = 'atrasada';
-        else if (diffDias <= JANELA_VENCENDO_VISITA) situacao = 'vencendo';
-        else situacao = 'em_dia';
-
-        return { nome: p.nome, micro: r.microarea, ultimaVisita, sugerida, situacao, dias: diffDias };
-    }).sort((a, b) => {
-        const ordem = { atrasada: 0, vencendo: 1, em_dia: 2, sem_registro: 3 };
-        if (ordem[a.situacao] !== ordem[b.situacao]) return ordem[a.situacao] - ordem[b.situacao];
-        if (a.dias !== null && b.dias !== null) return a.dias - b.dias;
-        return (a.nome || '').localeCompare(b.nome || '');
-    });
-}
-
-function setFiltroMicroVisitas(m) {
-    filtroMicroVisitas = m;
-    document.querySelectorAll('#filtrosMicroVisitas [data-micro]').forEach(b => b.classList.toggle('active', b.dataset.micro === m));
-    renderVisitasSincronizadas();
-}
-function setFiltroSituacaoVisitas(s) {
-    filtroSituacaoVisitas = s;
-    document.querySelectorAll('[data-sit]').forEach(b => b.classList.toggle('active', b.dataset.sit === s));
-    renderVisitasSincronizadas();
-}
-
-function renderVisitasSincronizadas() {
-    if (!document.getElementById('tbodyVisitas')) return;
-    const todosCalc = calcularVisitasSincronizadas();
-
-    // filtros de ACS/micro dinâmicos, no mesmo padrão das outras abas
-    const micros = [...new Set(todosCalc.map(d => normalizarMicro(d.micro)).filter(Boolean))].sort((a, b) => {
-        const na = parseFloat(a), nb = parseFloat(b);
-        if (!isNaN(na) && !isNaN(nb)) return na - nb;
-        return a.localeCompare(b);
-    });
-    const grupo = document.getElementById('filtrosMicroVisitas');
-    grupo.querySelectorAll('[data-micro]:not([data-micro="TODOS"])').forEach(b => b.remove());
-    micros.forEach(m => {
-        const btn = document.createElement('button');
-        btn.className = 'chip' + (filtroMicroVisitas === m ? ' active' : '');
-        btn.dataset.micro = m;
-        btn.textContent = nomeAcs(m);
-        btn.onclick = () => setFiltroMicroVisitas(m);
-        grupo.appendChild(btn);
-    });
-
-    document.getElementById('kpiVisAtrasada').textContent = todosCalc.filter(d => d.situacao === 'atrasada').length;
-    document.getElementById('kpiVisVencendo').textContent = todosCalc.filter(d => d.situacao === 'vencendo').length;
-    document.getElementById('kpiVisEmDia').textContent = todosCalc.filter(d => d.situacao === 'em_dia').length;
-    document.getElementById('kpiVisSemRegistro').textContent = todosCalc.filter(d => d.situacao === 'sem_registro').length;
-
-    const filtrados = todosCalc.filter(d =>
-        (filtroMicroVisitas === 'TODOS' || normalizarMicro(d.micro) === filtroMicroVisitas) &&
-        (filtroSituacaoVisitas === 'TODAS' || d.situacao === filtroSituacaoVisitas)
-    );
-
-    const labelSituacao = { atrasada: '🔴 Atrasada', vencendo: '🟠 Vencendo', em_dia: '🟢 Em dia', sem_registro: '⚪ Sem registro' };
-
-    document.getElementById('tbodyVisitas').innerHTML = filtrados.length ? filtrados.map(d => {
-        let explicacao;
-        if (d.situacao === 'sem_registro') {
-            explicacao = 'Nenhuma visita registrada ainda pra calcular a próxima data.';
-        } else if (d.situacao === 'atrasada') {
-            explicacao = `Já passou da data sugerida (${formatDataObj(d.sugerida)}) — priorize o quanto antes.`;
-        } else {
-            explicacao = `Não faça antes de ${formatDataObj(d.sugerida)} — ficaria com menos de 30 dias desde a última visita (${formatDataObj(d.ultimaVisita)}).`;
-        }
-        const situacaoTxt = d.situacao === 'atrasada' ? `${labelSituacao[d.situacao]} (há ${Math.abs(d.dias)}d)`
-            : d.situacao === 'vencendo' ? `${labelSituacao[d.situacao]} (em ${d.dias}d)`
-            : labelSituacao[d.situacao];
-        return `<tr>
-            <td>${d.nome}</td>
-            <td class="text-center">${nomeAcs(d.micro)}</td>
-            <td class="text-center">${formatDataObj(d.ultimaVisita)}</td>
-            <td class="text-center">${formatDataObj(d.sugerida)}</td>
-            <td class="text-center">${situacaoTxt}</td>
-            <td style="font-size:0.8rem; color:var(--muted);">${explicacao}</td>
-        </tr>`;
-    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Nenhum registro encontrado com esses filtros.</td></tr>';
-}
-
-// ── PWA: registra o service worker (cache do app pra abrir offline) ──
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.warn('Service worker não registrado:', err));
-    });
-}
+  const now = new Date();
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  document.getElementById('dateStr').textContent = now.toLocaleDateString('pt-BR', opts);
+  document.getElementById('footerDate').textContent = now.toLocaleDateString('pt-BR');
 </script>
 </body>
 </html>
