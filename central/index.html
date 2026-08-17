@@ -273,7 +273,8 @@ tbody tr:hover { background: #F8FAFC; }
     <div class="card">
       <div class="toolbar">
         <input type="text" id="buscaTexto" placeholder="🔎 Buscar por nome ou CNS..." oninput="renderTabela()">
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <span class="small" style="color:var(--muted); font-weight:600;">Resultados: <span id="badgeContadorPrincipal" style="color:var(--primary);">0</span></span>
           <button class="btn ghost" onclick="carregarDados()">🔄 Atualizar</button>
           <button class="btn ghost" onclick="gerarPDFCentral()">📄 Baixar PDF</button>
           <button class="btn warn" onclick="excluirTodosFiltrados()">🗑️ Excluir todos os filtrados</button>
@@ -295,6 +296,7 @@ tbody tr:hover { background: #F8FAFC; }
         <table>
           <thead>
             <tr>
+              <th>#</th>
               <th style="text-align:left;">Paciente / CNS / DN / Idade</th>
               <th>Indicador</th>
               <th>Data análise</th>
@@ -357,7 +359,7 @@ tbody tr:hover { background: #F8FAFC; }
         <h3 style="font-size:1rem; margin-bottom:10px;">🟢 Entraram na área</h3>
         <div class="table-responsive" style="overflow-x:auto;">
           <table>
-            <thead><tr><th style="text-align:left;">Nome</th><th>Micro</th></tr></thead>
+            <thead><tr><th>#</th><th style="text-align:left;">Nome</th><th>Micro</th></tr></thead>
             <tbody id="tbodyTerrEntrou"></tbody>
           </table>
         </div>
@@ -367,7 +369,7 @@ tbody tr:hover { background: #F8FAFC; }
         <h3 style="font-size:1rem; margin-bottom:10px;">🔴 Saíram da área</h3>
         <div class="table-responsive" style="overflow-x:auto;">
           <table>
-            <thead><tr><th style="text-align:left;">Nome</th><th>Micro (última conhecida)</th></tr></thead>
+            <thead><tr><th>#</th><th style="text-align:left;">Nome</th><th>Micro (última conhecida)</th></tr></thead>
             <tbody id="tbodyTerrSaiu"></tbody>
           </table>
         </div>
@@ -377,7 +379,7 @@ tbody tr:hover { background: #F8FAFC; }
         <h3 style="font-size:1rem; margin-bottom:10px;">🔄 Mudaram de área</h3>
         <div class="table-responsive" style="overflow-x:auto;">
           <table>
-            <thead><tr><th style="text-align:left;">Nome</th><th>De</th><th>Para</th></tr></thead>
+            <thead><tr><th>#</th><th style="text-align:left;">Nome</th><th>De</th><th>Para</th></tr></thead>
             <tbody id="tbodyTerrMudou"></tbody>
           </table>
         </div>
@@ -443,10 +445,12 @@ tbody tr:hover { background: #F8FAFC; }
     </div>
 
     <div class="card">
+      <div class="small" style="color:var(--muted); font-weight:600; margin-bottom:10px;">Resultados: <span id="badgeContadorVisitas" style="color:var(--primary);">0</span></div>
       <div class="table-responsive" style="overflow-x:auto;">
         <table>
           <thead>
             <tr>
+              <th>#</th>
               <th style="text-align:left;">Paciente</th>
               <th>ACS</th>
               <th>Última visita</th>
@@ -928,16 +932,20 @@ function renderTabela() {
     const vazio = document.getElementById('vazioMsg');
     tbody.innerHTML = '';
 
+    const badge = document.getElementById('badgeContadorPrincipal');
+    if (badge) badge.textContent = lista.length;
+
     if (!lista.length) {
         vazio.style.display = 'block';
         return;
     }
     vazio.style.display = 'none';
 
-    lista.forEach(r => {
+    lista.forEach((r, i) => {
         const p = r.pacientes || {};
         const tr = document.createElement('tr');
         tr.innerHTML = `
+            <td class="text-center text-muted">${i + 1}</td>
             <td class="nome-cel">
                 <div class="nome" onclick="buscarPorNome('${(p.nome || '').replace(/'/g, "\\'")}')">${p.nome || '(sem nome)'}</div>
                 <div class="meta">CNS: ${p.cns || '-'} · DN: ${formatBR(p.data_nascimento)} · ${calcularIdade(p.data_nascimento)}</div>
@@ -1250,16 +1258,16 @@ async function carregarTerritorio() {
     document.getElementById('kpiTerrReferencia').textContent = referencia.length;
 
     document.getElementById('tbodyTerrEntrou').innerHTML = entraram.length
-        ? entraram.map(p => `<tr><td>${p.nome}</td><td class="text-center">${nomeAcs(p.micro)}</td></tr>`).join('')
-        : '<tr><td colspan="2" style="text-align:center; color:var(--muted);">Ninguém novo desde a última referência.</td></tr>';
+        ? entraram.map((p, i) => `<tr><td class="text-center text-muted">${i + 1}</td><td>${p.nome}</td><td class="text-center">${nomeAcs(p.micro)}</td></tr>`).join('')
+        : '<tr><td colspan="3" style="text-align:center; color:var(--muted);">Ninguém novo desde a última referência.</td></tr>';
 
     document.getElementById('tbodyTerrSaiu').innerHTML = sairam.length
-        ? sairam.map(p => `<tr><td>${p.nome}</td><td class="text-center">${nomeAcs(p.micro)}</td></tr>`).join('')
-        : '<tr><td colspan="2" style="text-align:center; color:var(--muted);">Ninguém saiu desde a última referência.</td></tr>';
+        ? sairam.map((p, i) => `<tr><td class="text-center text-muted">${i + 1}</td><td>${p.nome}</td><td class="text-center">${nomeAcs(p.micro)}</td></tr>`).join('')
+        : '<tr><td colspan="3" style="text-align:center; color:var(--muted);">Ninguém saiu desde a última referência.</td></tr>';
 
     document.getElementById('tbodyTerrMudou').innerHTML = mudaram.length
-        ? mudaram.map(m => `<tr><td>${m.nome}</td><td class="text-center">${nomeAcs(m.de)}</td><td class="text-center">${nomeAcs(m.para)}</td></tr>`).join('')
-        : '<tr><td colspan="3" style="text-align:center; color:var(--muted);">Ninguém mudou de área desde a última referência.</td></tr>';
+        ? mudaram.map((m, i) => `<tr><td class="text-center text-muted">${i + 1}</td><td>${m.nome}</td><td class="text-center">${nomeAcs(m.de)}</td><td class="text-center">${nomeAcs(m.para)}</td></tr>`).join('')
+        : '<tr><td colspan="4" style="text-align:center; color:var(--muted);">Ninguém mudou de área desde a última referência.</td></tr>';
 
     renderHistoricoTerritorio(historico);
 
@@ -1437,10 +1445,11 @@ function renderVisitasSincronizadas() {
         (filtroMicroVisitas === 'TODOS' || normalizarMicro(d.micro) === filtroMicroVisitas) &&
         (filtroSituacaoVisitas === 'TODAS' || d.situacao === filtroSituacaoVisitas)
     );
+    document.getElementById('badgeContadorVisitas').textContent = filtrados.length;
 
     const labelSituacao = { atrasada: '🔴 Atrasada', vencendo: '🟠 Vencendo', em_dia: '🟢 Em dia', sem_registro: '⚪ Sem registro' };
 
-    document.getElementById('tbodyVisitas').innerHTML = filtrados.length ? filtrados.map(d => {
+    document.getElementById('tbodyVisitas').innerHTML = filtrados.length ? filtrados.map((d, i) => {
         let explicacao;
         if (d.situacao === 'sem_registro') {
             explicacao = 'Nenhuma visita registrada ainda pra calcular a próxima data.';
@@ -1453,6 +1462,7 @@ function renderVisitasSincronizadas() {
             : d.situacao === 'vencendo' ? `${labelSituacao[d.situacao]} (em ${d.dias}d)`
             : labelSituacao[d.situacao];
         return `<tr>
+            <td class="text-center text-muted">${i + 1}</td>
             <td>${d.nome}</td>
             <td class="text-center">${nomeAcs(d.micro)}</td>
             <td class="text-center">${formatDataObj(d.ultimaVisita)}</td>
